@@ -41,3 +41,8 @@
 <ul>
 <li> Database made up of JSON files that can be pushed/pulled or read/written as needed.
 </ul>
+
+<h3> Data Redundancy </h3>
+<ul>
+<li> Users must be able to enter data when offline via the Electron desktop application</li>
+</ul>

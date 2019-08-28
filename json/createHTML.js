@@ -18,7 +18,9 @@ window.onload = function() {
   }
   var finished = false;
   var timeout = 0;
+  var offset = 1;
   while(finished === false) {
+
     currentCategoryLevel++;
     subcategories.push([]);
     for(var i = 0; i < subcategories[currentCategoryLevel-1].length; i++) {
@@ -26,8 +28,9 @@ window.onload = function() {
       console.log(subcategories[currentCategoryLevel-1][i]);
       if(subcategories[currentCategoryLevel-1][i]) {
         for(var j = 0; j < subcategories[currentCategoryLevel-1][i].length; j++) {
-          html.splice(i, 0, headings[currentCategoryLevel][0] + subcategories[currentCategoryLevel-1][i][j].name + headings[currentCategoryLevel][1]);
+          html.splice(i+offset, 0, headings[currentCategoryLevel][0] + subcategories[currentCategoryLevel-1][i][j].name + headings[currentCategoryLevel][1]);
           console.log("INSERTING: " + subcategories[currentCategoryLevel-1][i][j].name);
+          offset++;
         }
       }
     }

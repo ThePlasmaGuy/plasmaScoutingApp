@@ -44,7 +44,6 @@ class JsonPrinter {
 	static public function print(o:Dynamic, ?replacer:Dynamic -> Dynamic -> Dynamic, ?space:String) : String {
 		var printer = new JsonPrinter(replacer, space);
 		printer.write("", o);
-		trace("Bazinga");
 		return printer.buf.toString();
 	}
 

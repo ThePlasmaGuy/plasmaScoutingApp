@@ -1,4 +1,4 @@
-var data = {
+{
 "categories":
 	[
 		{
@@ -37,9 +37,9 @@ var data = {
 							"name": "Location on Rockets",
 							"type": "dropdown",
 							"options": [
-								{"name": "N/A", "value": "na"},
-								{"name": "Close Side", "value": "close"},
-								{"name": "Far Side", "value": "far"}
+								{"optionName": "N/A", "value": "na"},
+								{"optionName": "Close Side", "value": "close"},
+								{"optionName": "Far Side", "value": "far"}
 							],
 							"comment": "Number of Hatch Panels on Rocket during Auton"
 						},
@@ -47,10 +47,10 @@ var data = {
 							"name": "Highest Level of Rocket Scored",
 							"type": "dropdown",
 							"options": [
-								{"name": "N/A", "value": "N/A"},
-								{"name": "1", "value": "1"},
-								{"name": "2", "value": "2"},
-								{"name": "3", "value": "3"}
+								{"optionName": "N/A", "value": "N/A"},
+								{"optionName": "1", "value": "1"},
+								{"optionName": "2", "value": "2"},
+								{"optionName": "3", "value": "3"}
 							],
 							"comment": "Highest Level of the Rochet scored on"
 						},
@@ -77,10 +77,10 @@ var data = {
 							"name": "Location on Rockets",
 							"type": "dropdown",
 							"options": [
-								{"name": "N/A", "value": "N/A"},
-								{"name": "1", "value": "1"},
-								{"name": "2", "value": "2"},
-								{"name": "3", "value": "3"}
+								{"optionName": "N/A", "value": "N/A"},
+								{"optionName": "1", "value": "1"},
+								{"optionName": "2", "value": "2"},
+								{"optionName": "3", "value": "3"}
 							],
 							"comment": "Number of Hatch Panels on Rocket during Auton"
 						}
@@ -105,9 +105,9 @@ var data = {
 							"name": "Location on Rockets",
 							"type": "dropdown",
 							"options": [
-								{"name": "N/A", "value": "na"},
-								{"name": "Close Side", "value": "close"},
-								{"name": "Far Side", "value": "far"}
+								{"optionName": "N/A", "value": "na"},
+								{"optionName": "Close Side", "value": "close"},
+								{"optionName": "Far Side", "value": "far"}
 							],
 							"comment": "Number of Hatch Panels on Rocket during Auton"
 						},
@@ -115,10 +115,10 @@ var data = {
 							"name": "Highest Level of Rocket Scored",
 							"type": "dropdown",
 							"options": [
-								{"name": "N/A", "value": "N/A"},
-								{"name": "1", "value": "1"},
-								{"name": "2", "value": "2"},
-								{"name": "3", "value": "3"}
+								{"optionName": "N/A", "value": "N/A"},
+								{"optionName": "1", "value": "1"},
+								{"optionName": "2", "value": "2"},
+								{"optionName": "3", "value": "3"}
 							],
 							"comment": "Highest Level of the Rochet scored on"
 						},
@@ -133,6 +133,21 @@ var data = {
 				},
 				{
 					"name": "Cargo",
+					"categories": [
+						{
+							"name": "TEST1",
+							"categories": [
+								{
+									"name": "TEST2",
+									"categories": [
+										{
+											"name": "TEST3"
+										}
+									]
+								}
+							]
+						}
+					],
 					"items": [
 						{
 							"name": "Number on Rockets",
@@ -145,10 +160,10 @@ var data = {
 							"name": "Location on Rockets",
 							"type": "dropdown",
 							"options": [
-								{"name": "N/A", "value": "N/A"},
-								{"name": "1", "value": "1"},
-								{"name": "2", "value": "2"},
-								{"name": "3", "value": "3"}
+								{"optionName": "N/A", "value": "N/A"},
+								{"optionName": "1", "value": "1"},
+								{"optionName": "2", "value": "2"},
+								{"optionName": "3", "value": "3"}
 							],
 							"comment": "Number of Hatch Panels on Rocket during Auton"
 						}

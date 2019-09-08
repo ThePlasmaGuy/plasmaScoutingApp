@@ -4,7 +4,7 @@ var catLevel = 0;
 
 var positions = [];
 
-var data = JSON.parse(fs.readFileSync('inputs.json', 'utf8'));
+var jsonData = JSON.parse(fs.readFileSync('inputs.json', 'utf8'));
 var html = [];
 var headings = [
 	["<h1>", "</h1>"],
@@ -23,24 +23,37 @@ function eachRecursive(obj) {
 	catLevel++;
 	for (var k in obj) {
 		if (typeof obj[k] == "object" && obj[k] !== null) {
-			console.log(obj[k]);
 			//catLevel = catLevel - 1;
-			eachRecursive(obj[k]);
+			if (!obj[k].type) {
+				eachRecursive(obj[k]);
+			} else {
+				html += obj[k].name;
+				if (obj[k].type === "int") {
+					html += "<input type='number' max='" + obj[k].max + "' min='" + obj[k].min + "'/><br/>";
+				} else if (obj[k].type === "dropdown") {
+					html += "<select>";
+					for (var i = 0; i < obj[k].options.length; i++) {
+						html += "<option value='" + obj[k].options[i].value + "'>" + obj[k].options[i].optionName + "</option>";
+					}
+					html += "</select><br/>";
+				}
+			}
 		} else {
-			if (obj.name && obj !== prevObj) {
+			if (!obj.type && obj.name) {
 				html += obj.name + "<br/>";
 				console.log(catLevel);
-				if (obj.type) {
-					//console.log(obj);
-				}
+			} else if (obj.type && obj !== prevObj) {
+				console.log(obj);
+				html += obj.name + "<br>";
 			}
 			prevObj = obj;
 		}
 	}
 }
-eachRecursive(data);
+
+eachRecursive(jsonData);
 
 
 for (var i = 0; i < html.length; i++) {
-	fs.writeFileSync("form.html", html);
+	fs.writeFileSync("index.html", html);
 }

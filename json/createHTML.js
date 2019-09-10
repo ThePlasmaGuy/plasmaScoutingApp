@@ -28,10 +28,11 @@ function eachRecursive(obj) {
 				eachRecursive(obj[k]);
 			} else {
 				html += obj[k].name;
+				console.log(obj[k].id);
 				if (obj[k].type === "int") {
-					html += "<input type='number' max='" + obj[k].max + "' min='" + obj[k].min + "'/><br/>";
+					html += "<input type='number' max='" + obj[k].max + "' min='" + obj[k].min + "' id='" + obj[k].id + "'/><br/>";
 				} else if (obj[k].type === "dropdown") {
-					html += "<select>";
+					html += "<select" + " id='" + obj[k].id + "'>";
 					for (var i = 0; i < obj[k].options.length; i++) {
 						html += "<option value='" + obj[k].options[i].value + "'>" + obj[k].options[i].optionName + "</option>";
 					}

@@ -1,91 +1,57 @@
 const fs = require('fs');
+const createHTML = require("./createHTML.js");
+const express = require('express');
+const path = require('path');
+const bodyParser = require('body-parser');
+
 
 var dbTemplate = {};
 
-var catLevel = 0;
-
-var positions = [];
-
 var jsonData = JSON.parse(fs.readFileSync('inputs.json', 'utf8'));
-var html = [];
-var headings = [
-	["<h1>", "</h1>"],
-	["<h2>", "</h2>"],
-	["<h3>", "</h3>"],
-	["<h4>", "</h4>"],
-	["<h5>", "</h5>"],
-	["<h6>", "</h6>"]
-];
 
 var completed = false;
 
-var prevObj = {};
-
-function generateHTML(obj) {
-	catLevel++;
-	for (var k in obj) {
-		if (typeof obj[k] == "object" && obj[k] !== null) {
-			//catLevel = catLevel - 1;
-			if (!obj[k].type) {
-				generateHTML(obj[k]);
-			} else {
-				html += obj[k].name;
-				console.log(obj[k].id);
-				if (obj[k].type === "int") {
-					html += "<input type='number' max='" + obj[k].max + "' min='" + obj[k].min + "' id='" + obj[k].id + "'/><br/>";
-				} else if (obj[k].type === "dropdown") {
-					html += "<select" + " id='" + obj[k].id + "'>";
-					for (var i = 0; i < obj[k].options.length; i++) {
-						html += "<option value='" + obj[k].options[i].value + "'>" + obj[k].options[i].optionName + "</option>";
-					}
-					html += "</select><br/>";
-				}
-			}
-		} else {
-			if (!obj.type && obj.name) {
-				html += obj.name + "<br/>";
-				console.log(catLevel);
-			} else if (obj.type && obj !== prevObj) {
-				console.log(obj);
-				html += obj.name + "<br>";
-			}
-			prevObj = obj;
-		}
-	}
-}
 
 
 
-function generateDB(obj) {
-	for (var k in obj) {
-		if (typeof obj[k] == "object" && obj[k] !== null) {
-			//catLevel = catLevel - 1;
-			if (!obj[k].type) {
-				generateDB(obj[k]);
-			} else {
 
-			}
-		} else {
-			if (!obj.type && obj.name) {
-				eval("dbTemplate." + obj.name.split(" ").join("_") + "=" + "[]");
-				console.log(catLevel);
-			} else if (obj.type && obj !== prevObj) {
-				console.log(obj);
-				eval("dbTemplate." + obj.name.split(" ").join("_") + "=" + "[]");
-				for(var i in obj) {
-					eval("dbTemplate." + obj.name.split(" ").join("_"));
-				}
-			}
-			prevObj = obj;
-		}
-	}
-}
 
-generateHTML(jsonData);
-generateDB(jsonData);
-console.log(dbTemplate);
-html += "<script>window.onload=function(){console.log(" + JSON.stringify(dbTemplate) + ")}";
+var app = express();
 
-for (var i = 0; i < html.length; i++) {
-	fs.writeFileSync("index.html", html);
-}
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+
+
+var html = "<form id='mainForm' action='/submit' method='POST'>" + createHTML.generateHTML(jsonData) + "<input type='submit' id='submit' value='Submit'/></form>";
+fs.writeFileSync("form.html", html);
+
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname + '/form.html'));
+});
+
+
+app.get('/analysis', function(req, res) {
+  res.sendFile(path.join(__dirname + '/form.html'));
+});
+
+
+app.post('/submit', function(req, res) {
+
+  console.log(req.body);
+	var dbArray = [];
+  try {
+    if (fs.existsSync("./db.json")) {
+      dbArray = JSON.parse(fs.readFileSync('./db.json'));
+    }
+  } catch {
+    fs.writeFileSync("./db.json", "");
+  }
+	dbArray.push(req.body);
+	fs.writeFileSync("./db.json", JSON.stringify(dbArray));
+	res.sendFile(path.join(__dirname + '/submit.html'));
+});
+
+app.listen(8080);

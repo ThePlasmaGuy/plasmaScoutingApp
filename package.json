@@ -1,0 +1,30 @@
+{
+  "name": "plasmascoutingapp",
+  "version": "1.0.0",
+  "description": "Plasma Scouting App",
+  "main": "main.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "file": "^0.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "npm start",
+    "start": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dfsek/plasmaScoutingApp.git"
+  },
+  "keywords": [
+    "plasma",
+    "scouting",
+    "app"
+  ],
+  "author": "dfsek",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dfsek/plasmaScoutingApp/issues"
+  },
+  "homepage": "https://github.com/dfsek/plasmaScoutingApp#readme"
+}

@@ -2,6 +2,6 @@
 
 Web/Electron application tool for entering, storing, and accessing information from team scouting
 
-**dfsek** - Project Lead/Front End
+**dfsek** - Project Lead
 
-**JackBaer** - Back End
+**JackBaer** - Electron App

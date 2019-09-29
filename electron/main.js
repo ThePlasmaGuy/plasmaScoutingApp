@@ -1,12 +1,33 @@
 // Modules to control application life and create native browser window
+const https = require('http');
+const fs = require('fs');
 const {
 	app,
 	BrowserWindow
 } = require('electron')
-const path = require('path')
+const path = require('path');
 const url = "localhost:80";
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
+
+https.get('http://localhost:81', (resp) => {
+	let data = '';
+
+	// A chunk of data has been recieved.
+	resp.on('data', (chunk) => {
+		data += chunk;
+	});
+
+	// The whole response has been received. Print out the result.
+	resp.on('end', () => {
+		console.log(data);
+		fs.writeFileSync("form.html", data);
+	});
+
+}).on("error", (err) => {
+	console.log("Error:  Server offline");
+});
+
 let mainWindow
 
 function createWindow() {

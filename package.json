@@ -5,7 +5,8 @@
   "main": "main.js",
   "dependencies": {
     "express": "^4.17.1",
-    "file": "^0.2.2"
+    "file": "^0.2.2",
+    "md5-file": "^4.0.0"
   },
   "devDependencies": {
     "electron": "^6.0.10"

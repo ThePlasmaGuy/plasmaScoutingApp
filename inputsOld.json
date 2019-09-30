@@ -25,15 +25,15 @@
         "items": [{
             "name": "Number on Rockets",
             "type": "int",
-            "id": "sandstormHatchRocketNumber",
+            "id": "sandstormRocketNumber",
             "min": 0,
             "max": 12,
-            "comment": "Number of hatch panels placed on rocket during sandstorm"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           },
           {
             "name": "Location on Rockets",
             "type": "dropdown",
-            "id": "sandstormHatchRocketLocation",
+            "id": "sandstormRocketLocation",
             "options": [{
                 "optionName": "N/A",
                 "value": "na"
@@ -47,12 +47,12 @@
                 "value": "far"
               }
             ],
-            "comment": "Which side were the hatches placed on in sandstorm"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           },
           {
             "name": "Highest Level of Rocket Scored",
             "type": "dropdown",
-            "id": "sandstormHatchHighestLevel",
+            "id": "sandstormHighestLevel",
             "options": [{
                 "optionName": "N/A",
                 "value": "N/A"
@@ -70,7 +70,7 @@
                 "value": "3"
               }
             ],
-            "comment": "Highest level of the rocket hatches placed on"
+            "comment": "Highest Level of the Rochet scored on"
           },
           {
             "name": "Number on Cargo Ship",
@@ -78,7 +78,7 @@
             "id": "sandstormCargo",
             "min": 0,
             "max": 8,
-            "comment": "Number of hatch panels placed on cargo ship during sandstorm"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           }
         ]
       },
@@ -87,15 +87,15 @@
         "items": [{
             "name": "Number on Rockets",
             "type": "int",
-            "id": "sandstormCargoRocketNumber",
+            "id": "sandstormRocketCargo",
             "min": 0,
             "max": 12,
-            "comment": "Number of cargo placed in rocket during sandstorm"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           },
           {
-            "name": "Highest Level of Rocket Scored",
+            "name": "Location on Rockets",
             "type": "dropdown",
-            "id": "sandstormCargohighestLevel",
+            "id": "sandstormCargoLocation",
             "options": [{
                 "optionName": "N/A",
                 "value": "N/A"
@@ -113,7 +113,7 @@
                 "value": "3"
               }
             ],
-            "comment": "Highest level cargo placed in rocket during sandstorm"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           }
         ]
       }
@@ -126,15 +126,34 @@
         "items": [{
             "name": "Number on Rockets",
             "type": "int",
-            "id": "teleopHatchRocketNumber",
+            "id": "teleopRocketNumber",
             "min": 0,
             "max": 12,
-            "comment": "Number of hatch panels placed on Rocket during teleop"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
+          },
+          {
+            "name": "Location on Rockets",
+            "type": "dropdown",
+            "id": "teleopRocketLocation",
+            "options": [{
+                "optionName": "N/A",
+                "value": "na"
+              },
+              {
+                "optionName": "Close Side",
+                "value": "close"
+              },
+              {
+                "optionName": "Far Side",
+                "value": "far"
+              }
+            ],
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           },
           {
             "name": "Highest Level of Rocket Scored",
             "type": "dropdown",
-            "id": "teleopHatchHighestLevel",
+            "id": "teleopHighestRocketLevel",
             "options": [{
                 "optionName": "N/A",
                 "value": "N/A"
@@ -152,32 +171,32 @@
                 "value": "3"
               }
             ],
-            "comment": "Highest Level hatches were placed on rocket during teleop"
+            "comment": "Highest Level of the Rochet scored on"
           },
           {
             "name": "Number on Cargo Ship",
             "type": "int",
-            "id": "teleopHatchCargoShip",
+            "id": "teleopCargoPanels",
             "min": 0,
             "max": 8,
-            "comment": "Number of Hatch Panels placed on cargo ship during teleop"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           }
         ]
       },
       {
         "name": "Cargo",
         "items": [{
-            "name": "Number in Rockets",
+            "name": "Number on Rockets",
             "type": "int",
-            "id": "teleopCargoRocketNumber",
+            "id": "teleopRocketCargo",
             "min": 0,
             "max": 12,
-            "comment": "Number of Cargo scored in Rocket during teleop"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           },
           {
-            "name": "Highest Level of Rocket Scored",
+            "name": "Location on Rockets",
             "type": "dropdown",
-            "id": "teleopCargohighestLevel",
+            "id": "teleopCargoRocketLocation",
             "options": [{
                 "optionName": "N/A",
                 "value": "N/A"
@@ -195,61 +214,11 @@
                 "value": "3"
               }
             ],
-            "comment": "Highest level of rocket cargo scored in during teleop"
+            "comment": "Number of Hatch Panels on Rocket during Auton"
           }
         ]
-      },
-      {
-        "name": "Defence",
-        "items": [{
-          "name": "Did They Play Defence?",
-          "type": "dropdown",
-          "id": "teleopRobotPlayedDefence",
-          "options": [{
-              "optionName": "no",
-              "value": "false"
-            },
-            {
-              "optionName": "yes",
-              "value": "true"
-            }
-          ],
-          "comment": "Did the robot play defence during teleop?"
-        }]
       }
-    ]
-  },
-  {
-    "name": "End Game",
-    "categories": [{
-      "name": "Highest Level Parked on",
-      "type": "dropdown",
-      "id": "endGameParkLevel",
-      "options": [{
-          "optionName": "N/A",
-          "value": "N/A"
-        },
-        {
-          "optionName": "level 1",
-          "value": "1"
-        },
-        {
-          "optionName": "level 2",
-          "value": "2"
-        },
-        {
-          "optionName": "level 3",
-          "value": "3"
-        }
-      ]
-    }]
-  },
-  {
-    "name": "Additional Notes",
-    "type": "longString",
-    "max": 2048,
-    "min": 0,
-    "id": "additionalNotes",
-    "required": false
+    ],
+    "items": []
   }
 ]

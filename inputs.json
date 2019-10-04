@@ -85,7 +85,7 @@
       {
         "name": "Cargo",
         "items": [{
-            "name": "Number on Rockets",
+            "name": "Number in Rockets",
             "type": "int",
             "id": "sandstormCargoRocketNumber",
             "min": 0,

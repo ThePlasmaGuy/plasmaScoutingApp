@@ -82,7 +82,46 @@ app.get('/', function(req, res) {
 
 
 app.get('/analysis', function(req, res) {
-  res.sendFile(path.join(__dirname + '/html/form.html'));
+  var database = JSON.parse(fs.readFileSync('./db/db.json'));
+  if (req.query.team) {
+    if (req.query.match) {
+      console.log("TEAM: " + req.query.team + ", MATCH: " + req.query.match);
+      var responseString = "";
+      for (var i = 0; i < database.length; i++) {
+        if (database[i].data.teamNumber == req.query.team && database[i].data.matchNumber == req.query.match) {
+          responseString += JSON.stringify(database[i].data) + "<br>";
+        }
+      }
+      if (responseString === "") {
+        responseString = "No data found matching request";
+      }
+      res.send(responseString);
+    } else {
+      console.log("TEAM: " + req.query.team);
+      var responseString = "";
+      for (var i = 0; i < database.length; i++) {
+        if (database[i].data.teamNumber == req.query.team) {
+          responseString += JSON.stringify(database[i].data) + "<br>";
+        }
+      }
+      if (responseString === "") {
+        responseString = "No data found matching request";
+      }
+      res.send(responseString);
+    }
+  } else if (req.query.match) {
+    console.log("MATCH: " + req.query.match);
+    var responseString = "";
+    for (var i = 0; i < database.length; i++) {
+      if (database[i].data.matchNumber == req.query.match) {
+        responseString += JSON.stringify(database[i].data) + "<br>";
+      }
+    }
+    if (responseString === "") {
+      responseString = "No data found matching request";
+    }
+    res.send(responseString);
+  }
 });
 
 app.get('/submit', function(req, res) {
@@ -100,7 +139,7 @@ app.get('/submit', function(req, res) {
   }
   var sameHash = true;
   for (var i = 0; i < dbArray.length; i++) {
-    if (dbArray[i].hash === getData.hash) {
+    if (dbArray[i].hash === getData.hash && getData.hash === hash) {
       sameHash = true;
     } else {
       sameHash = false;

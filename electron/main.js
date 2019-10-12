@@ -7,7 +7,9 @@ const {
   BrowserWindow
 } = require('electron')
 const path = require('path');
-const url = "localhost:80";
+const url = "http://localhost";
+const port = 80;
+const apiPort = 81;
 var hash;
 
 function generateUUID(len) {
@@ -39,7 +41,7 @@ ipcMain.on('responseData', (event, arg) => {
     "hash": hash
   };
   console.log(dataObj);
-  https.get('http://localhost/submit?data=' + JSON.stringify(dataObj), (resp) => {
+  https.get(url + ':' + port + '/submit?data=' + JSON.stringify(dataObj), (resp) => {
     let data = '';
     resp.on('data', (chunk) => {
       data += chunk;
@@ -59,7 +61,7 @@ ipcMain.on('responseData', (event, arg) => {
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-https.get('http://localhost:81', (resp) => {
+https.get(url + ':' + apiPort, (resp) => {
   let data = '';
 
   // A chunk of data has been recieved.

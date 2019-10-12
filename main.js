@@ -89,10 +89,10 @@ app.get('/analysis', function(req, res) {
       var responseString = "";
       for (var i = 0; i < database.length; i++) {
         if (database[i].data.teamNumber == req.query.team && database[i].data.matchNumber == req.query.match) {
-          responseString += JSON.stringify(database[i].data) + "<br>";
+          responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
         }
       }
-      if (responseString === "") {
+      if (responseString == "") {
         responseString = "No data found matching request";
       }
       res.send(responseString);
@@ -101,10 +101,10 @@ app.get('/analysis', function(req, res) {
       var responseString = "";
       for (var i = 0; i < database.length; i++) {
         if (database[i].data.teamNumber == req.query.team) {
-          responseString += JSON.stringify(database[i].data) + "<br>";
+          responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
         }
       }
-      if (responseString === "") {
+      if (responseString == "") {
         responseString = "No data found matching request";
       }
       res.send(responseString);
@@ -114,13 +114,15 @@ app.get('/analysis', function(req, res) {
     var responseString = "";
     for (var i = 0; i < database.length; i++) {
       if (database[i].data.matchNumber == req.query.match) {
-        responseString += JSON.stringify(database[i].data) + "<br>";
+        responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
       }
     }
-    if (responseString === "") {
+    if (responseString == "") {
       responseString = "No data found matching request";
     }
     res.send(responseString);
+  } else {
+    res.sendFile(path.join(__dirname + '/html/query.html'))
   }
 });
 

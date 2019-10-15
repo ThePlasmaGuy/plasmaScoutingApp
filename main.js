@@ -9,7 +9,33 @@ const port = 80;
 const apiPort = 81;
 const debug = true;
 
+
+
+
 var jsonData = JSON.parse(fs.readFileSync('inputs.json', 'utf8'));
+
+var scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
+
+console.log(scoutIDs)
+
+function isValidScoutID(id) {
+  for (var i = 0; i < scoutIDs.length; i++) {
+    if (scoutIDs[i].id == id) {
+      return true;
+      break;
+    }
+  }
+}
+
+function getScoutName(id) {
+  for (var i = 0; i < scoutIDs.length; i++) {
+    if (scoutIDs[i].id == id) {
+      return scoutIDs[i].name;
+      break;
+    }
+  }
+  return null;
+}
 
 var app = new express();
 
@@ -23,6 +49,7 @@ function randomValueHex(len) {
     .toString('hex') // convert to hexadecimal format
     .slice(0, len) // return required number of characters
 }
+
 
 
 
@@ -75,20 +102,54 @@ if (sameHash0 === true) {
 var html = "<form id='mainForm' action='/submit' method='POST'>" + rawHtml + "<input type='submit' id='submit' value='Submit'/></form>";
 
 
+
+
 app.get('/', function(req, res) {
-  res.send(html);
-  console.log("new client with IP " + req.ip);
+  if (isValidScoutID(req.query.scoutID) === true) {
+    res.send(html);
+    console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + getScoutName(req.query.scoutID));
+  } else if (!req.query.scoutID) {
+    res.sendFile(path.join(__dirname + '/html/login.html'));
+  } else {
+    res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+  }
 });
 
 
 app.get('/analysis', function(req, res) {
-  var database = JSON.parse(fs.readFileSync('./db/db.json'));
-  if (req.query.team) {
-    if (req.query.match) {
-      console.log("TEAM: " + req.query.team + ", MATCH: " + req.query.match);
+  if (isValidScoutID(req.query.scoutID) === true) {
+    var database = JSON.parse(fs.readFileSync('./db/db.json'));
+    if (req.query.team) {
+      if (req.query.match) {
+        console.log("TEAM: " + req.query.team + ", MATCH: " + req.query.match);
+        var responseString = "";
+        for (var i = 0; i < database.length; i++) {
+          if (database[i].data.teamNumber == req.query.team && database[i].data.matchNumber == req.query.match) {
+            responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
+          }
+        }
+        if (responseString == "") {
+          responseString = "No data found matching request";
+        }
+        res.send(responseString);
+      } else {
+        console.log("TEAM: " + req.query.team);
+        var responseString = "";
+        for (var i = 0; i < database.length; i++) {
+          if (database[i].data.teamNumber == req.query.team) {
+            responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
+          }
+        }
+        if (responseString == "") {
+          responseString = "No data found matching request";
+        }
+        res.send(responseString);
+      }
+    } else if (req.query.match) {
+      console.log("MATCH: " + req.query.match);
       var responseString = "";
       for (var i = 0; i < database.length; i++) {
-        if (database[i].data.teamNumber == req.query.team && database[i].data.matchNumber == req.query.match) {
+        if (database[i].data.matchNumber == req.query.match) {
           responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
         }
       }
@@ -97,32 +158,12 @@ app.get('/analysis', function(req, res) {
       }
       res.send(responseString);
     } else {
-      console.log("TEAM: " + req.query.team);
-      var responseString = "";
-      for (var i = 0; i < database.length; i++) {
-        if (database[i].data.teamNumber == req.query.team) {
-          responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
-        }
-      }
-      if (responseString == "") {
-        responseString = "No data found matching request";
-      }
-      res.send(responseString);
+      res.sendFile(path.join(__dirname + '/html/query.html'))
     }
-  } else if (req.query.match) {
-    console.log("MATCH: " + req.query.match);
-    var responseString = "";
-    for (var i = 0; i < database.length; i++) {
-      if (database[i].data.matchNumber == req.query.match) {
-        responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
-      }
-    }
-    if (responseString == "") {
-      responseString = "No data found matching request";
-    }
-    res.send(responseString);
+  } else if (!req.query.scoutID) {
+    res.sendFile(path.join(__dirname + '/html/login.html'));
   } else {
-    res.sendFile(path.join(__dirname + '/html/query.html'))
+    res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
   }
 });
 

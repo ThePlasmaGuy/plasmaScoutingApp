@@ -93,6 +93,14 @@
             "comment": "Number of cargo placed in rocket during sandstorm"
           },
           {
+            "name": "Number in Cargo Ship",
+            "type": "int",
+            "id": "sandstormCargoShipNumber",
+            "min": 0,
+            "max": 12,
+            "comment": "Number of cargo placed in cargo ship during sandstorm"
+          },
+          {
             "name": "Highest Level of Rocket Scored",
             "type": "dropdown",
             "id": "sandstormCargohighestLevel",
@@ -175,6 +183,14 @@
             "comment": "Number of Cargo scored in Rocket during teleop"
           },
           {
+            "name": "Number in Cargo Ship",
+            "type": "int",
+            "id": "teleopCargoShipNumber",
+            "min": 0,
+            "max": 12,
+            "comment": "Number of cargo placed in cargo ship during teleop"
+          },
+          {
             "name": "Highest Level of Rocket Scored",
             "type": "dropdown",
             "id": "teleopCargohighestLevel",
@@ -200,11 +216,11 @@
         ]
       },
       {
-        "name": "Defence",
+        "name": "Defense",
         "items": [{
-          "name": "Did They Play Defence?",
+          "name": "Did They Play Defense?",
           "type": "dropdown",
-          "id": "teleopRobotPlayedDefence",
+          "id": "teleopRobotPlayedDefense",
           "options": [{
               "optionName": "no",
               "value": "false"
@@ -214,7 +230,7 @@
               "value": "true"
             }
           ],
-          "comment": "Did the robot play defence during teleop?"
+          "comment": "Did the robot play Defense during teleop?"
         }]
       }
     ]

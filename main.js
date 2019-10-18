@@ -213,6 +213,40 @@ app.get('/download', function(req, res) {
 	}
 });
 
+app.get('/downloadExcel', function(req, res) {
+	if(isValidScoutID(req.query.scoutID) === true) {
+		var jsonMain;
+		try {
+			jsonMain = JSON.parse(fs.readFileSync('./db/db.json'));
+		} catch {
+			jsonMain = undefined;
+		}
+		var json = [];
+		var csv = "";
+		if(jsonMain) {
+			for(var k in jsonMain[0].data) {
+				csv += k + "&#9;";
+			}
+			csv = csv.substring(0, csv.length - 1);
+			csv += "\n";
+			for(var i = 0; i < jsonMain.length; i++) {
+				for(var k in jsonMain[i].data) {
+					csv += eval("jsonMain[i].data." + k).split(",").join(" ") + "&#9;";
+				}
+				csv = csv.substring(0, csv.length - 1);
+				csv += "\n";
+			}
+			res.send("<textarea style='width:90%;height:90%' onclick='this.focus();this.select()'' readonly='readonly'>" + csv.split("\"").join(" ").split("'").join(" ") + "</textarea>");
+		} else {
+			res.send("No data has been collected yet!");
+		}
+	} else if(!req.query.scoutID) {
+		res.sendFile(path.join(__dirname + '/html/login.html'));
+	} else {
+		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+	}
+});
+
 app.get('/submit', function(req, res) {
 	if(isValidScoutID(req.query.scoutID) === true) {
 		if(debug === true) {

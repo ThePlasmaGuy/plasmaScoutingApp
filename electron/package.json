@@ -20,6 +20,8 @@
     "electron": "^6.0.10"
   },
   "dependencies": {
-    "md5-file": "^4.0.0"
+    "electron-prompt": "^1.4.0",
+    "md5-file": "^4.0.0",
+    "smalltalk": "^4.0.2"
   }
 }

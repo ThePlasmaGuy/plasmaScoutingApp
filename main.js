@@ -11,7 +11,6 @@ const debug = true;
 
 
 
-
 var jsonData = JSON.parse(fs.readFileSync('inputs.json', 'utf8'));
 
 var scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
@@ -46,8 +45,8 @@ var dbArray = [];
 function randomValueHex(len) {
 	return crypto
 		.randomBytes(Math.ceil(len / 2))
-		.toString('hex') // convert to hexadecimal format
-		.slice(0, len) // return required number of characters
+		.toString('hex')
+		.slice(0, len)
 }
 
 
@@ -63,7 +62,11 @@ if(debug === true) {
 	console.log(rawHtml);
 }
 apiApp.get('/', function(req, res) {
-	res.send(rawHtml);
+	if(isValidScoutID(req.query.scoutID) === true) {
+		res.send(rawHtml);
+	} else {
+		res.send('INVALID SCOUT ID');
+	}
 })
 
 apiApp.listen(apiPort);
@@ -115,43 +118,25 @@ app.get('/', function(req, res) {
 	}
 });
 
+app.get('/verify', function(req, res) {
+	if(isValidScoutID(req.query.scoutID) === true) {
+		res.send('VALID');
+		console.log("new Electron client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + getScoutName(req.query.scoutID));
+	} else {
+		res.send('INVALID');
+	}
+});
 
 app.get('/analysis', function(req, res) {
-	if(isValidScoutID(req.query.scoutID) === true) {
 
-		if(isValidScoutID(req.query.scoutID) === true) {
-			var database = JSON.parse(fs.readFileSync('./db/db.json'));
-			if(req.query.team) {
-				if(req.query.match) {
-					console.log("TEAM: " + req.query.team + ", MATCH: " + req.query.match);
-					var responseString = "";
-					for(var i = 0; i < database.length; i++) {
-						if(database[i].data.teamNumber == req.query.team && database[i].data.matchNumber == req.query.match) {
-							responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
-						}
-					}
-					if(responseString == "") {
-						responseString = "No data found matching request";
-					}
-					res.send(responseString);
-				} else {
-					console.log("TEAM: " + req.query.team);
-					var responseString = "";
-					for(var i = 0; i < database.length; i++) {
-						if(database[i].data.teamNumber == req.query.team) {
-							responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
-						}
-					}
-					if(responseString == "") {
-						responseString = "No data found matching request";
-					}
-					res.send(responseString);
-				}
-			} else if(req.query.match) {
-				console.log("MATCH: " + req.query.match);
+	if(isValidScoutID(req.query.scoutID) === true) {
+		var database = JSON.parse(fs.readFileSync('./db/db.json'));
+		if(req.query.team) {
+			if(req.query.match) {
+				console.log("TEAM: " + req.query.team + ", MATCH: " + req.query.match);
 				var responseString = "";
 				for(var i = 0; i < database.length; i++) {
-					if(database[i].data.matchNumber == req.query.match) {
+					if(database[i].data.teamNumber == req.query.team && database[i].data.matchNumber == req.query.match) {
 						responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
 					}
 				}
@@ -160,14 +145,33 @@ app.get('/analysis', function(req, res) {
 				}
 				res.send(responseString);
 			} else {
-				res.sendFile(path.join(__dirname + '/html/query.html'));
+				console.log("TEAM: " + req.query.team);
+				var responseString = "";
+				for(var i = 0; i < database.length; i++) {
+					if(database[i].data.teamNumber == req.query.team) {
+						responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
+					}
+				}
+				if(responseString == "") {
+					responseString = "No data found matching request";
+				}
+				res.send(responseString);
 			}
-		} else if(!req.query.scoutID) {
-			res.sendFile(path.join(__dirname + '/html/login.html'));
+		} else if(req.query.match) {
+			console.log("MATCH: " + req.query.match);
+			var responseString = "";
+			for(var i = 0; i < database.length; i++) {
+				if(database[i].data.matchNumber == req.query.match) {
+					responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
+				}
+			}
+			if(responseString == "") {
+				responseString = "No data found matching request";
+			}
+			res.send(responseString);
 		} else {
-			res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+			res.sendFile(path.join(__dirname + '/html/query.html'));
 		}
-
 	} else if(!req.query.scoutID) {
 		res.sendFile(path.join(__dirname + '/html/login.html'));
 	} else {
@@ -176,61 +180,81 @@ app.get('/analysis', function(req, res) {
 });
 
 app.get('/download', function(req, res) {
-	var jsonMain = JSON.parse(fs.readFileSync('./db/db.json'));
-	var json = [];
-	var csv = "";
-	for(var k in jsonMain[0].data) {
-		csv += k + ",";
-	}
-	csv = csv.substring(0, csv.length - 1);
-	csv += "<br>";
-	for(var i = 0; i < jsonMain.length; i++) {
-		for(var k in jsonMain[i].data) {
-			csv += eval("jsonMain[i].data." + k) + ",";
+	if(isValidScoutID(req.query.scoutID) === true) {
+		var jsonMain;
+		try {
+			jsonMain = JSON.parse(fs.readFileSync('./db/db.json'));
+		} catch {
+			jsonMain = undefined;
 		}
-		csv = csv.substring(0, csv.length - 1);
-		csv += "<br>";
+		var json = [];
+		var csv = "";
+		if(jsonMain) {
+			for(var k in jsonMain[0].data) {
+				csv += k + ",";
+			}
+			csv = csv.substring(0, csv.length - 1);
+			csv += "<br>";
+			for(var i = 0; i < jsonMain.length; i++) {
+				for(var k in jsonMain[i].data) {
+					csv += eval("jsonMain[i].data." + k).split(",").join(" ") + ",";
+				}
+				csv = csv.substring(0, csv.length - 1);
+				csv += "<br>";
+			}
+			res.send(csv.split("\"").join(" ").split("'").join(" "));
+		} else {
+			res.send("No data has been collected yet!");
+		}
+	} else if(!req.query.scoutID) {
+		res.sendFile(path.join(__dirname + '/html/login.html'));
+	} else {
+		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
 	}
-	res.send(csv)
-
 });
 
 app.get('/submit', function(req, res) {
-	if(debug === true) {
-		console.log(req.query.data);
-	}
-	var getData = JSON.parse(req.query.data);
-	dbArray = [];
-	try {
-		if(fs.existsSync("./db/db.json")) {
-			dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
+	if(isValidScoutID(req.query.scoutID) === true) {
+		if(debug === true) {
+			console.log(decodeURIComponent(req.query.data));
 		}
-	} catch {
-		fs.writeFileSync("./db/db.json", "");
-	}
-	var sameHash = true;
-	for(var i = 0; i < dbArray.length; i++) {
-		if(dbArray[i].hash === getData.hash && getData.hash === hash) {
-			sameHash = true;
+		var getData = JSON.parse(decodeURIComponent(req.query.data));
+		dbArray = [];
+		try {
+			if(fs.existsSync("./db/db.json")) {
+				dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
+			}
+		} catch {
+			fs.writeFileSync("./db/db.json", "");
+		}
+		var sameHash = true;
+		for(var i = 0; i < dbArray.length; i++) {
+			if(dbArray[i].hash === getData.hash && getData.hash === hash) {
+				sameHash = true;
+			} else {
+				sameHash = false;
+				break;
+			}
+		}
+		if(sameHash === true) {
+			var dbPushObj = {
+				"hash": hash,
+				"ip": req.ip,
+				"uuid": getData.uuid,
+				"data": getData.data
+			}
+			dbPushObj.data.scoutID = req.query.scoutID;
+			dbArray.push(dbPushObj);
+			res.send('Form Submitted!');
 		} else {
-			sameHash = false;
-			break;
+			console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
+			res.send('ERROR: Incorrect Hash! Do you have the correct form.html?');
 		}
-	}
-	if(sameHash === true) {
-		dbArray.push({
-			"hash": hash,
-			"ip": req.ip,
-			"uuid": getData.uuid,
-			"data": getData.data
-		});
-		res.send('Form Submitted!');
-	} else {
-		console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
-		res.send('ERROR: Incorrect Hash! Do you have the correct form.html?');
-	}
 
-	fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));
+		fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));
+	} else {
+		res.send('INVALID SCOUT ID');
+	}
 });
 
 app.post('/', function(req, res) {
@@ -256,12 +280,14 @@ app.post('/', function(req, res) {
 		}
 	}
 	if(sameHash === true) {
-		dbArray.push({
+		var dbNewObj = {
 			"hash": hash,
 			"ip": req.ip,
 			"uuid": randomValueHex(256),
 			"data": req.body
-		});
+		}
+		dbNewObj.data.scoutID = req.query.scoutID;
+		dbArray.push(dbNewObj);
 		res.sendFile(path.join(__dirname + '/html/submit.html'));
 	} else {
 		console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");

@@ -27,7 +27,7 @@ const {
 
 
 ipcMain.on('reFetchForm', (event, arg) => {
-	console.log(scoutID);
+	console.log("Scout ID: " + scoutID);
 	https.get(url + ':' + apiPort + "?scoutID=" + scoutID, (resp) => {
 		let data = '';
 

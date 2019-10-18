@@ -39,6 +39,20 @@
   {
     "name": "Sandstorm",
     "categories": [{
+        "name": "Did They Cross the Line During Sandstorm?",
+        "type": "dropdown",
+        "id": "sandsormCrossLine",
+        "options": [{
+            "optionName": "no",
+            "value": "false"
+          },
+          {
+            "optionName": "yes",
+            "value": "true"
+          }
+        ],
+        "comment": "Did the robot cross the HAB line during sandstorm?"
+      }, {
         "name": "Hatch Panels",
         "items": [{
             "name": "Number on Rockets",

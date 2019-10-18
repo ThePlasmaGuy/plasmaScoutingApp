@@ -270,7 +270,16 @@ app.get('/submit', function(req, res) {
 				break;
 			}
 		}
-		if(sameHash === true) {
+		var uuidFound = false;
+		for(var i = 0; i < dbArray.length; i++) {
+			if(dbArray[i].uuid === getData.uuid) {
+				uuidFound = true;
+			} else {
+				uuidFound = false;
+				break;
+			}
+		}
+		if(sameHash === true && uuidFound === false) {
 			var dbPushObj = {
 				"hash": hash,
 				"ip": req.ip,
@@ -280,6 +289,8 @@ app.get('/submit', function(req, res) {
 			dbPushObj.data.scoutID = req.query.scoutID;
 			dbArray.push(dbPushObj);
 			res.send('Form Submitted!');
+		} else if(uuidFound === true) {
+			res.send('Same UUID');
 		} else {
 			console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
 			res.send('ERROR: Incorrect Hash! Do you have the correct form.html?');

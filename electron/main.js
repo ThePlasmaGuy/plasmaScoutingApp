@@ -1,4 +1,3 @@
-// Modules to control application life and create native browser window
 const https = require('http');
 const fs = require('fs');
 const md5File = require('md5-file');
@@ -12,6 +11,7 @@ const port = 80;
 const apiPort = 81;
 var hash;
 var scoutID;
+var localData = false;
 const prompt = require('electron-prompt');
 
 function generateUUID(len) {
@@ -31,12 +31,10 @@ ipcMain.on('reFetchForm', (event, arg) => {
 	https.get(url + ':' + apiPort + "?scoutID=" + scoutID, (resp) => {
 		let data = '';
 
-		// A chunk of data has been recieved.
 		resp.on('data', (chunk) => {
 			data += chunk;
 		});
 
-		// The whole response has been received. Print out the result.
 		resp.on('end', () => {
 			fs.writeFileSync("form.html", data);
 			hash = md5File.sync('form.html');
@@ -46,6 +44,7 @@ ipcMain.on('reFetchForm', (event, arg) => {
 
 	}).on("error", (err) => {
 		console.log("Error:  Server offline");
+		event.returnValue = "<b>SERVER OFFLINE, PUSH WHEN DONE!</b><br>" + fs.readFileSync("form.html");
 	});
 });
 
@@ -58,7 +57,39 @@ ipcMain.on('quit', (event, arg) => {
 	event.returnValue = undefined;
 });
 
+ipcMain.on('checkLocal', (event, arg) => {
+	event.returnValue = localData;
+});
 
+ipcMain.on('sendLocal', (event, arg) => {
+	if(localData === true) {
+		var localData = JSON.parse(fs.readFileSync("./db.json"));
+		for(var i = 0; i < localData.length; i++) {
+			https.get(url + ':' + port + '/submit?data=' + encodeURIComponent(localData[i]) + "&scoutID=" + scoutID, (resp) => {
+				let data = '';
+				resp.on('data', (chunk) => {
+					data += chunk;
+				});
+				resp.on('end', () => {});
+			}).on("error", (err) => {
+				console.log("Error:  Server offline");
+				try {
+					var fileJSON = JSON.parse(fs.readFileSync("./db.json"));
+					fileJSON.push(dataObj);
+					fs.writeFileSync("./db.json", JSON.stringify("fileJSON"));
+				} catch {
+					var fileJSON = []
+					fileJSON.push(dataObj);
+					fs.writeFileSync("./db.json", JSON.stringify("fileJSON"));
+				}
+				event.returnValue = "Server Offline."
+				localData = true;
+			});
+		}
+		event.returnValue = "Done";
+	}
+	event.returnValue = "No Local Data";
+});
 
 ipcMain.on('verifyID', (event, arg) => {
 	console.log(arg);
@@ -69,7 +100,6 @@ ipcMain.on('verifyID', (event, arg) => {
 				data += chunk;
 			});
 
-			// The whole response has been received. Print out the result.
 			resp.on('end', () => {
 				console.log(data);
 				if(data == 'VALID') {
@@ -100,7 +130,6 @@ ipcMain.on('verifyID', (event, arg) => {
 				data += chunk;
 			});
 
-			// The whole response has been received. Print out the result.
 			resp.on('end', () => {
 				console.log(data);
 				if(data === 'VALID') {
@@ -131,32 +160,33 @@ ipcMain.on('responseData', (event, arg) => {
 		resp.on('data', (chunk) => {
 			data += chunk;
 		});
-
-		// The whole response has been received. Print out the result.
 		resp.on('end', () => {
 			event.returnValue = data;
 		});
 	}).on("error", (err) => {
 		console.log("Error:  Server offline");
+		try {
+			var fileJSON = JSON.parse(fs.readFileSync("./db.json"));
+			fileJSON.push(dataObj);
+			fs.writeFileSync("./db.json", JSON.stringify(fileJSON));
+		} catch {
+			var fileJSON = []
+			fileJSON.push(dataObj);
+			fs.writeFileSync("./db.json", JSON.stringify(fileJSON));
+		}
 		event.returnValue = "Server Offline."
+		localData = true;
 	});
 
 })
 
-
-
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
 console.log(scoutID);
 https.get(url + ':' + apiPort + "?scoutID=" + scoutID, (resp) => {
 	let data = '';
-
-	// A chunk of data has been recieved.
 	resp.on('data', (chunk) => {
 		data += chunk;
 	});
 
-	// The whole response has been received. Print out the result.
 	resp.on('end', () => {
 		fs.writeFileSync("form.html", data);
 		hash = md5File.sync('form.html');
@@ -172,7 +202,6 @@ https.get(url + ':' + apiPort + "?scoutID=" + scoutID, (resp) => {
 let mainWindow
 
 function createWindow() {
-	// Create the browser window.
 	mainWindow = new BrowserWindow({
 		width: 800,
 		height: 600,
@@ -182,38 +211,18 @@ function createWindow() {
 		}
 	})
 
-	// and load the index.html of the app.
 	mainWindow.loadFile('index.html')
-
-	// Open the DevTools.
-	// mainWindow.webContents.openDevTools()
-
-	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
-		// Dereference the window object, usually you would store windows
-		// in an array if your app supports multi windows, this is the time
-		// when you should delete the corresponding element.
 		mainWindow = null
 	})
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on('ready', createWindow)
 
-// Quit when all windows are closed.
 app.on('window-all-closed', function() {
-	// On macOS it is common for applications and their menu bar
-	// to stay active until the user quits explicitly with Cmd + Q
 	if(process.platform !== 'darwin') app.quit()
 })
 
 app.on('activate', function() {
-	// On macOS it's common to re-create a window in the app when the
-	// dock icon is clicked and there are no other windows open.
 	if(mainWindow === null) createWindow()
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

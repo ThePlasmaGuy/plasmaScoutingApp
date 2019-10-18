@@ -64,7 +64,6 @@ function submitForm() {
 		}
 	}
 	document.getElementById("incomplete").innerHTML = "";
-	dataObj.scoutID = scoutID;
 	console.log(dataObj);
 	var html = document.getElementById("app").innerHTML;
 	document.getElementById("app").innerHTML = ipcRenderer.sendSync('responseData', JSON.stringify(dataObj)) + '<br><input type="button" onclick="initPage()" value="Back"/>';
@@ -82,6 +81,9 @@ function initPage() {
 	document.getElementById("submit").onclick = function(e) {
 		e.preventDefault();
 		submitForm();
+	}
+	if(ipcRenderer.sendSync('checkLocal') === true) {
+		document.getElementById("localData").innerHTML = "<input>"
 	}
 }
 

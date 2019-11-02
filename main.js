@@ -1,29 +1,27 @@
-const fs = require('fs');
-const createHTML = require("./lib/createHTML.js");
-const searchDB = require("./lib/searchDB.js");
-const express = require('express');
+const fs = require('fs-extra');
 const path = require('path');
-const bodyParser = require('body-parser');
-const md5File = require('md5-file');
 const crypto = require('crypto');
-const port = 80;
-const apiPort = 81;
+const express = require('express');
+const md5File = require('md5-file');
+const mustache = require('mustache');
+const bodyParser = require('body-parser');
+const createHTML = require("./lib/createHTML.js"); // Form Generation
+const searchDB = require("./lib/searchDB.js"); // Database Search Tools
+
+
+// Configuration Values
+const port = 80; // Live Application Port
+const apiPort = 81; // API Port
 const debug = true;
 
 
+// Container Variables
+var dbArray = []; // Local Scouting Database
+var scoutIDs = []; // Local Scout Information
 
-var jsonData = JSON.parse(fs.readFileSync('inputs.json', 'utf8'));
-var css = fs.readFileSync("./style.css");
 
-var rawHtml = createHTML.generateHTML([true, jsonData]);
-
-console.log("HTML: " + createHTML.generateHTML([true, jsonData]));
-
-var scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
-
-console.log(scoutIDs)
-
-function isValidScoutID(id) {
+// Helper Functions
+function isValidScoutID(id) { // Check a given ScoutID against valid IDs
 	for(var i = 0; i < scoutIDs.length; i++) {
 		if(scoutIDs[i].id == id) {
 			return true;
@@ -32,7 +30,7 @@ function isValidScoutID(id) {
 	}
 }
 
-function getScoutName(id) {
+function getScoutName(id) { // Get Scout Name from a ScoutID
 	for(var i = 0; i < scoutIDs.length; i++) {
 		if(scoutIDs[i].id == id) {
 			return scoutIDs[i].name;
@@ -42,13 +40,7 @@ function getScoutName(id) {
 	return null;
 }
 
-var app = new express();
-
-var apiApp = new express();
-
-var dbArray = [];
-
-function randomValueHex(len) {
+function randomValueHex(len) { // Generate a Random Hex Value of a given length
 	return crypto
 		.randomBytes(Math.ceil(len / 2))
 		.toString('hex')
@@ -56,66 +48,98 @@ function randomValueHex(len) {
 }
 
 
+// Import Static Data
+var formConfig = JSON.parse(fs.readFileSync('inputs.json', 'utf8')); // Scouting Form Configuration Data
 
 
-app.use(bodyParser.json());
+// Generate ScoutIDs
+if (fs.existsSync("./json/scouts.json")) { // If Scout Identification Exists, Load to Local
+	scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
+} else {
+	scoutIDs = [{"id": "000000", "name": "Administrator"}];
+	fs.outputFileSync("./json/scouts.json", "[{\n    \"id\": \"000000\",\n    \"name\": \"Administrator\"\n  }\n]");
+}
+
+
+// Generate Database
+if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Database
+	dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
+} else { // Else, Create New Database
+	fs.outputFileSync("./db/db.json", "{}");
+}
+
+
+// Generate Form
+var formData = createHTML.generateHTML([true, formConfig]); // Generate Form HTML
+fs.outputFileSync("./html/form.html", formData); // Write to Disk
+
+
+// Check Form against Database
+const formHash = md5File.sync('./html/form.html');  // Unique Form Instance Identifier
+
+var matchedFormIdentity = true;
+
+for(var i = 0; i < dbArray.length; i++) {
+	if(dbArray[i].hash === formHash.toString()) { // Check Form identity against current Data Entry
+		matchedFormIdentity = true; // Form Matches Data Entry
+	} else {
+		matchedFormIdentity = false; // Data Entry does not match loaded Form 
+		break;
+	}
+}
+
+if(matchedFormIdentity != true) { // If Form is not a complete match for all Data Entries, throw ERROR
+	throw "ERROR: The database contains data from a form with a different hash than the form found!";
+}
+
+
+// Log Static Data [DEBUG]
+if(debug === true) {
+	console.log("Current Scouting Form: " + formData);
+	console.log("Form Identity: " + formHash);
+	console.log("Registered Scouts: " + JSON.stringify(scoutIDs));
+}
+
+
+// Initialize Express Instances
+var app = new express(); // Live Application
+var api = new express(); // API
+
+app.use(bodyParser.json()); // Install Incoming Request Parsing Middleware
 app.use(bodyParser.urlencoded({
 	extended: true
 }));
 
 
-
-
-if(debug === true) {
-	console.log(rawHtml);
-}
-apiApp.get('/', function(req, res) {
+// API Endpoints
+api.get('/', function(req, res) {
 	if(isValidScoutID(req.query.scoutID) === true) {
-		res.send(rawHtml);
+		res.send(formData);
 	} else {
 		res.send('INVALID SCOUT ID');
 	}
 })
 
-apiApp.listen(apiPort);
+
+// Will refactor
+//
+//
+//
+//
+//
+//
+var html = "<!DOCTYPE html><html><head><style></style><title>Scouting App</title></head><body><form id='mainForm' action='/submit' method='POST'>" + formData + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
+//
+//
+//
+//
+//
+//
+//
 
 
-fs.writeFileSync("./html/form.html", rawHtml);
-
-const hash = md5File.sync('./html/form.html');
-console.log("Hash of form is " + hash);
-
-try {
-	if(fs.existsSync("./db/db.json")) {
-		dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
-	}
-} catch {
-	fs.writeFileSync("./db/db.json", "");
-}
-
-var sameHash0 = true;
-for(var i = 0; i < dbArray.length; i++) {
-	if(dbArray[i].hash === hash.toString()) {
-		sameHash0 = true;
-	} else {
-		sameHash0 = false;
-		break;
-	}
-}
-if(sameHash0 === true) {
-
-} else {
-	throw "ERROR: The database contains data from a form with a different hash than the form found!";
-}
-
-
-
-var html = "<!DOCTYPE html><html><head><style>" + css + "</style><title>Scouting App</title></head><body><form id='mainForm' action='/submit' method='POST'>" + rawHtml + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
-
-
-
-
-app.get('/', function(req, res) {
+// Application Endpoints
+app.get('/', function(req, res) { 
 	if(isValidScoutID(req.query.scoutID) === true) {
 		res.send(html);
 		console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + getScoutName(req.query.scoutID));
@@ -140,9 +164,24 @@ app.get('/analysis', function(req, res) {
 	if(isValidScoutID(req.query.scoutID) === true) {
 		var rawHtmlNonRequire = createHTML.generateHTML([false, JSON.parse(fs.readFileSync("./inputs.json"))]);
 
-		var nonRequireHTML = "<!DOCTYPE html><html><head><style>" + css + "</style><title>Scouting App</title></head><body><form id='mainForm' action='/submitAnalysis' method='POST'>" + rawHtmlNonRequire + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
-		res.send(nonRequireHTML);
 		//
+		//
+		//
+		//
+		//
+		//
+		//
+		var nonRequireHTML = "<!DOCTYPE html><html><head><style></style><title>Scouting App</title></head><body><form id='mainForm' action='/submitAnalysis' method='POST'>" + rawHtmlNonRequire + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
+		//
+		//
+		//
+		//
+		//
+		//
+		//
+		//
+		
+		res.send(nonRequireHTML);
 	} else if(!req.query.scoutID) {
 		res.sendFile(path.join(__dirname + '/html/login.html'));
 	} else {
@@ -292,7 +331,7 @@ app.get('/submit', function(req, res) {
 		}
 		var sameHash = true;
 		for(var i = 0; i < dbArray.length; i++) {
-			if(dbArray[i].hash === getData.hash && getData.hash === hash) {
+			if(dbArray[i].hash === getData.hash && getData.hash === formHash) {
 				sameHash = true;
 			} else {
 				sameHash = false;
@@ -310,7 +349,7 @@ app.get('/submit', function(req, res) {
 		}
 		if(sameHash === true && uuidFound === false) {
 			var dbPushObj = {
-				"hash": hash,
+				"hash": formHash,
 				"ip": req.ip,
 				"uuid": getData.uuid,
 				"data": getData.data
@@ -346,7 +385,7 @@ app.post('/', function(req, res) {
 	}
 	var sameHash = true;
 	for(var i = 0; i < dbArray.length; i++) {
-		if(dbArray[i].hash === hash.toString()) {
+		if(dbArray[i].hash === formHash.toString()) {
 			sameHash = true;
 		} else {
 			sameHash = false;
@@ -355,7 +394,7 @@ app.post('/', function(req, res) {
 	}
 	if(sameHash === true) {
 		var dbNewObj = {
-			"hash": hash,
+			"hash": formHash,
 			"ip": req.ip,
 			"uuid": randomValueHex(256),
 			"data": req.body
@@ -372,5 +411,8 @@ app.post('/', function(req, res) {
 
 });
 
-console.log("listening on port " + port);
+
+// Open Express Instances
+console.log("Application Live on Port " + port);
 app.listen(port);
+api.listen(apiPort);

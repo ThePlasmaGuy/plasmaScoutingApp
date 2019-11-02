@@ -1,28 +1,58 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html>
 
 <head>
-  <script type="text/javascript">
-    function saveID() {
-      localStorage.setItem("scoutID", document.getElementById("scoutID").value);
-    }
-    if (localStorage.getItem("scoutID")) {
-      if (window.location.href.includes("?") === true) {
-        window.location.href = window.location.href + "&scoutID=" + localStorage.getItem("scoutID");
-      } else {
-        window.location.href = window.location.href + "?scoutID=" + localStorage.getItem("scoutID");
-      }
-    }
-  </script>
-  <meta charset="utf-8">
-  <title>Search Data</title>
+    <title>Login | Plasma Scout</title>
+    <link rel="stylesheet" type="text/css" href="/css/default.css">
+    <link rel="stylesheet" type="text/css" href="/css/login.css">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    
+
+    <!-- Web App Setup -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link href="/img/splashscreens/AAPL-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" /> <!-- iPhone 5/5s/5c/SE -->
+    <link href="/img/splashscreens/AAPL-1136x640.png" media="(device-width: 568px) and (device-height: 320px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" /> <!-- iPhone 6/6s/7/8 -->
+    <link href="/img/splashscreens/AAPL-1334x750.png" media="(device-width: 667px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" /> <!-- iPhone 6+/6s+/7+/8+ -->
+    <link href="/img/splashscreens/AAPL-2208x1242.png" media="(device-width: 736px) and (device-height: 414px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" /> <!-- iPhone X/XS/11Pro -->
+    <link href="/img/splashscreens/AAPL-2436x1125.png" media="(device-width: 812px) and (device-height: 375px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" /> <!-- iPhone XR/11 -->
+    <link href="/img/splashscreens/AAPL-1792x828.png" media="(device-width: 896px) and (device-height: 414px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" /> <!-- iPhone XS Max/11 Pro Max -->
+    <link href="/img/splashscreens/AAPL-2688x1242.png" media="(device-width: 896px) and (device-height: 414px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" /> <!-- 9.7" iPad / 7.9" iPad mini 4 -->
+    <link href="/img/splashscreens/AAPL-2048x1536.png" media="(device-width: 1024px) and (device-height: 768px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-1668x2224.png" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" /> <!-- 10.5" iPad Pro / 11" iPad Pro -->
+    <link href="/img/splashscreens/AAPL-2224x1668.png" media="(device-width: 1112px) and (device-height: 834px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" />
+    <link href="/img/splashscreens/AAPL-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" /> <!-- 12.9" iPad Pro -->
+    <link href="/img/splashscreens/AAPL-2732x2048.png" media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" />
+    <link href="/img/icon/AAPL.png" rel="apple-touch-icon" >
+    <link href="/img/icon/AAPL-Phone-2x.png" sizes="120x120" rel="apple-touch-icon">
+    <link href="/img/icon/AAPL-iPad.png" sizes="152x152" rel="apple-touch-icon">
+    <link href="/img/icon/AAPL-iPadPro.png" sizes="167x167" rel="apple-touch-icon">
+    <link href="/img/icon/AAPL-Phone-3x.png" sizes="180x180" rel="apple-touch-icon">
 </head>
 
 <body>
-  <h1>You are currently not logged in.</h1>
-  <form>
-    Scout ID <input name="scoutID" id="scoutID" type="text" /><br>
-    <input type="submit" value="submit" onclick="saveID()" />
+    <!-- Navigation Bar -->
+    <div id="navigation"></div>
+
+    <!-- Login Form -->
+    <div id="login">
+        <h2 id="login-title">Plasma Scout</h2>
+        <p id="login-description">Scout ID</p>
+        <input id="login-identification" name="scoutID" type="text" autocomplete="off"/>
+        <div id="login-submit" onclick="saveID(document.getElementById('login-identification').value)">Log In</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/default.js"></script>
 </body>
 
 </html>

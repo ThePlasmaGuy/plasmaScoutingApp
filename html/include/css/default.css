@@ -1,10 +1,20 @@
 /************************************************
  *         Plasma Robotics Scouting App         *
- *              Application Styles              *
+ *          Default Application Styles          *
  ***********************************************/
 
 /* Base Styles */
 @import url('https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,500,500i,700,700i'); /* Import Ubuntu Font from Google */
+
+@font-face {
+    font-family: 'PL_Eras';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Eras Bold ITC');
+    src: url("https://plasmarobotics.com/styles/fonts/ErasITC-Bold.eot");
+    src: url("https://plasmarobotics.com/styles/fonts/ErasITC-Bold.eot?#iefix") format("embedded-opentype"), url("https://plasmarobotics.com/styles/fonts/ErasITC-Bold.woff") format("woff"), url("https://plasmarobotics.com/styles/fonts/ErasITC-Bold.ttf") format("truetype"), url("https://plasmarobotics.com/styles/fonts/ErasITC-Bold.svg#ErasITC-Bold") format("svg");
+  }
+    
 
 * {
     box-sizing: border-box;

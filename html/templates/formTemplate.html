@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="/css/default.css">   
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
     
+
     <!-- Web App Setup -->
     <link rel="manifest" href="/manifest.json">
 
@@ -41,16 +42,15 @@
     <!-- Navigation Bar -->
     <div id="navigation"></div>
 
+    <!-- Content -->
     <div id="content">
-        <form id="scoutingForm" method="POST">
+        <form id="dataEntry" method="POST">
             {{{formData}}}
         </form>
     </div>
 
-    <!-- Set Form Destination to Current Host Point -->
-    <script type="text/javascript">
-        document.getElementById('scoutingForm').setAttribute('action', window.location.href)
-    </script>
+    <!-- Scripts -->
+    <script src="/js/default.js"></script>
 </body>
 
 </html>

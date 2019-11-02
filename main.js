@@ -50,6 +50,7 @@ function randomValueHex(len) { // Generate a Random Hex Value of a given length
 
 // Import Static Data
 var formConfig = JSON.parse(fs.readFileSync('inputs.json', 'utf8')); // Scouting Form Configuration Data
+var formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
 
 
 // Generate ScoutIDs
@@ -105,6 +106,7 @@ if(debug === true) {
 var app = new express(); // Live Application
 var api = new express(); // API
 
+app.use(express.static(path.join(__dirname + '/html/include'))); // Serve static files from include directory
 app.use(bodyParser.json()); // Install Incoming Request Parsing Middleware
 app.use(bodyParser.urlencoded({
 	extended: true
@@ -141,7 +143,8 @@ var html = "<!DOCTYPE html><html><head><style></style><title>Scouting App</title
 // Application Endpoints
 app.get('/', function(req, res) { 
 	if(isValidScoutID(req.query.scoutID) === true) {
-		res.send(html);
+		page = mustache.render(formTemplate, {pageTitle: "Match", formData: formData});
+		res.send(page);
 		console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + getScoutName(req.query.scoutID));
 	} else if(!req.query.scoutID) {
 		res.sendFile(path.join(__dirname + '/html/login.html'));

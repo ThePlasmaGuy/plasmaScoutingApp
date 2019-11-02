@@ -1,0 +1,83 @@
+/************************************************
+ *         Plasma Robotics Scouting App         *
+ *              Application Styles              *
+ ***********************************************/
+
+/* Base Styles */
+@import url('https://fonts.googleapis.com/css?family=Ubuntu:300,300i,400,400i,500,500i,700,700i'); /* Import Ubuntu Font from Google */
+
+* {
+    box-sizing: border-box;
+}
+
+body, html {
+    width: 100%;
+    padding:0;
+    margin: 0;
+    font-family: "Ubuntu", Arial, Times;
+    font-size: 0.95em;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    background: rgb(156,25,180);
+    background: -moz-linear-gradient(130deg, rgba(156,25,180,1) 0%, rgba(141,0,255,1) 100%);
+    background: -webkit-linear-gradient(130deg, rgba(156,25,180,1) 0%,rgba(141,0,255,1) 100%);
+    background: -o-linear-gradient(130deg, rgba(156,25,180,1) 0%,rgba(141,0,255,1) 100%);
+    background: linear-gradient(130deg, rgba(156,25,180,1) 0%,rgba(141,0,255,1) 100%);
+    background-size: 115vw, 115vh;
+    background-position: center center;
+    background-attachment: fixed;
+}
+
+
+/* Content Container */
+#content {
+    background-color: #eaeaea;
+    width: calc(100% - 50px) !important;
+    max-width: 100%;
+    min-height: calc(83vh - 280px);
+    margin-top: 65px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 3px;
+    text-align: center;
+    transition: min-height 500ms ease-in-out;
+  }
+    
+#content::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+    
+@media (min-width: 576px) {
+    #content, #navigation-container {
+        margin-left: auto;
+        margin-right: auto;
+        width: 510px !important;
+        max-width: 100% !important;
+    }
+}
+  
+@media (min-width: 768px) {
+    #content, #navigation-container {
+        width: 690px !important;
+        max-width: 100% !important;
+    }
+}
+  
+@media (min-width: 992px) {
+    #content, #navigation-container {
+        width: 930px !important;
+        max-width: 100% !important;
+    }
+}
+  
+@media (min-width: 1200px) {
+    #content, #navigation-container {
+        width: 1110px !important;
+        max-width: 100% !important;
+    }
+}

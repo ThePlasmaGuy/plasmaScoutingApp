@@ -44,12 +44,12 @@
     <div id="navigation"></div>
 
     <!-- Login Form -->
-    <div id="login">
+    <form id="login">
         <h2 id="login-title">Plasma Scout</h2>
         <p id="login-description">Scout ID</p>
         <input id="login-identification" name="scoutID" type="text" autocomplete="off"/>
-        <div id="login-submit" onclick="saveID(document.getElementById('login-identification').value)">Log In</div>
-    </div>
+        <input id="login-submit" type="submit" value="Log In" onclick="saveID(document.getElementById('login-identification').value)">
+    </form>
 
     <!-- Scripts -->
     <script src="/js/default.js"></script>

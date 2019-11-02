@@ -6,21 +6,21 @@
  /* Helper Functions */
  function saveID(value) {
   localStorage.setItem("scoutID", value);
-  location.reload();
-}
+  pageURL = new URL(window.location.href);
+  pageURL.searchParams.set("scoutID", value);
+  window.location.href = pageURL.toString();
+ }
 
 
 /* Startup Scripts */
 if (localStorage.getItem("scoutID")) {
-  if (window.location.href.includes("?") === true) {
-    if (window.location.href.includes("scoutID") === false) {
-      window.location.href = window.location.href + "&scoutID=" + localStorage.getItem("scoutID");
-    }
-  } else {
-    window.location.href = window.location.href + "?scoutID=" + localStorage.getItem("scoutID");
+  pageURL = new URL(window.location.href);
+  if (pageURL.searchParams.get("scoutID") === null) {
+    pageURL.searchParams.set("scoutID", localStorage.getItem("scoutID"));
+    window.location.href = pageURL.toString();
   }
 }
 
-  if (document.getElementById("dataEntry") != null) {
-    document.getElementById("dataEntry").setAttribute('action', window.location.href);
-  }
+if (document.getElementById("dataEntry") != null) {
+  document.getElementById("dataEntry").setAttribute('action', window.location.href);
+}

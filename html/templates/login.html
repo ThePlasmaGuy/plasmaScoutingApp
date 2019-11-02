@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{pageTitle}} | Plasma Scout</title>
+    <link rel="stylesheet" type="text/css" href="/css/default.css">
+    <link rel="stylesheet" type="text/css" href="/css/login.css">
+
+    {{{metadata}}}
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <div id="navigation"></div>
+
+    <!-- Login Form -->
+    <form id="login">
+        <h2 id="login-title">Plasma Scout</h2>
+        {{{error}}}
+        <p id="login-description">Scout ID</p>
+        <input id="login-identification" name="scoutID" type="text" autocomplete="off"/>
+        <input id="login-submit" type="submit" value="Log In" onclick="saveID(document.getElementById('login-identification').value)">
+    </form>
+
+    <!-- Scripts -->
+    <script src="/js/default.js"></script>
+</body>
+
+</html>

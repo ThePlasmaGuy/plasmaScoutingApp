@@ -50,7 +50,7 @@ function randomValueHex(len) { // Generate a Random Hex Value of a given length
 
 // Import Static Data
 var formConfig = JSON.parse(fs.readFileSync('inputs.json', 'utf8')); // Scouting Form Configuration Data
-var formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
+var templateMetadata = fs.readFileSync('./html/templates/meta.html', 'utf8');; // Template Metadata
 
 
 // Generate ScoutIDs
@@ -95,7 +95,7 @@ if(matchedFormIdentity != true) { // If Form is not a complete match for all Dat
 
 
 // Log Static Data [DEBUG]
-if(debug === true) {
+if (debug === true) {
 	console.log("Current Scouting Form: " + formData);
 	console.log("Form Identity: " + formHash);
 	console.log("Registered Scouts: " + JSON.stringify(scoutIDs));
@@ -123,33 +123,24 @@ api.get('/', function(req, res) {
 })
 
 
-// Will refactor
-//
-//
-//
-//
-//
-//
-var html = "<!DOCTYPE html><html><head><style></style><title>Scouting App</title></head><body><form id='mainForm' action='/submit' method='POST'>" + formData + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
-//
-//
-//
-//
-//
-//
-//
-
-
 // Application Endpoints
 app.get('/', function(req, res) { 
 	if(isValidScoutID(req.query.scoutID) === true) {
-		page = mustache.render(formTemplate, {pageTitle: "Match", formData: formData});
-		res.send(page);
-		console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + getScoutName(req.query.scoutID));
+		formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: formData}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("LOGIN: Scout \"" + getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
@@ -165,30 +156,21 @@ app.get('/verify', function(req, res) {
 
 app.get('/analysis', function(req, res) {
 	if(isValidScoutID(req.query.scoutID) === true) {
-		var rawHtmlNonRequire = createHTML.generateHTML([false, JSON.parse(fs.readFileSync("./inputs.json"))]);
+		var analysisFormData = createHTML.generateHTML([false, JSON.parse(fs.readFileSync("./inputs.json"))]) // Generate Analysis Specific Form Data
 
-		//
-		//
-		//
-		//
-		//
-		//
-		//
-		var nonRequireHTML = "<!DOCTYPE html><html><head><style></style><title>Scouting App</title></head><body><form id='mainForm' action='/submitAnalysis' method='POST'>" + rawHtmlNonRequire + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
-		//
-		//
-		//
-		//
-		//
-		//
-		//
-		//
-		
-		res.send(nonRequireHTML);
+		formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: analysisFormData}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
@@ -278,9 +260,15 @@ app.get('/download', function(req, res) {
 			res.send("No data has been collected yet!");
 		}
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
@@ -312,9 +300,15 @@ app.get('/downloadExcel', function(req, res) {
 			res.send("No data has been collected yet!");
 		}
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 

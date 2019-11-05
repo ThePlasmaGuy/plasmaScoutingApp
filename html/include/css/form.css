@@ -1,0 +1,55 @@
+/************************************************
+ *         Plasma Robotics Scouting App         *
+ *                 Form  Styles                 *
+ ***********************************************/
+
+ /* Category Containers */
+.form-category {
+    width: 100%;
+    max-width: 450px;
+    margin: 15px auto 0 auto;
+    padding: 0 0 15px 0;
+    border-radius: 15px;
+    background-color: #666;
+    color: #fff;
+}
+
+.form-category:first-of-type { /* Prevent extra spacing on first categories */
+    margin-top: 0;
+}
+
+.form-category > .form-category { /* Sub-category */
+    width: calc(100% - 30px);
+    margin-left: 15px;
+    margin-right: 15px;
+    border-radius: 12px;
+    background-color: #bababa;
+    color: #7B3188;
+}
+
+.form-categoryTitle {
+    width: 100%;
+    padding: 15px;
+    margin: 0 0 15px 0;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    background-color: #494949;
+    font-family: "PL_Eras", "Eras Bold ITC", "Arial", "Verdana";
+    font-size: 1.2em;
+}
+
+.form-category > .form-category > .form-categoryTitle {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    background-color: #9d9d9d;
+}
+
+/* Input Styling */
+.form-input, .form-select {
+    display: inline-block;
+    height: 30px;
+    width: calc(100% - 30px);
+    max-width: 200px;
+    text-align: center;
+    line-height: 30px;
+}

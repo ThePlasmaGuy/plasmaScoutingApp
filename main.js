@@ -70,9 +70,11 @@ if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Databa
 }
 
 
-// Generate Form
-var formData = createHTML.generateHTML([true, formConfig]); // Generate Form HTML
+// Generate Match Form
+var formData = createHTML.generateHTML(true, formConfig); // Generate Form HTML
+var analysisFormData = createHTML.generateHTML(false, formConfig) // Generate Analysis Form HTML (No Options Required -> requireAnswer = false)
 fs.outputFileSync("./html/form.html", formData); // Write to Disk
+
 
 
 // Check Form against Database
@@ -156,10 +158,8 @@ app.get('/verify', function(req, res) {
 
 app.get('/analysis', function(req, res) {
 	if(isValidScoutID(req.query.scoutID) === true) {
-		var analysisFormData = createHTML.generateHTML([false, JSON.parse(fs.readFileSync("./inputs.json"))]) // Generate Analysis Specific Form Data
-
 		formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
-		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: analysisFormData}); // Render HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: analysisFormData}); // Render HTML Template (w/ Analysis Form)
 		res.send(page); // Send Rendered HTML to Client
 	} else if(!req.query.scoutID) {
 		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template

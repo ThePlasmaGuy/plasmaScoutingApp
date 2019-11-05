@@ -21,15 +21,15 @@
         "type": "dropdown",
         "id": "beginningStartLevel",
         "options": [{
-            "optionName": "level 1",
+            "optionName": "Level 1",
             "value": "1"
           },
           {
-            "optionName": "level 2",
+            "optionName": "Level 2",
             "value": "2"
           },
           {
-            "optionName": "level 3",
+            "optionName": "Level 3",
             "value": "3"
           }
         ]
@@ -43,11 +43,11 @@
         "type": "dropdown",
         "id": "sandsormCrossLine",
         "options": [{
-            "optionName": "no",
+            "optionName": "No",
             "value": "false"
           },
           {
-            "optionName": "yes",
+            "optionName": "Yes",
             "value": "true"
           }
         ],
@@ -254,11 +254,11 @@
           "type": "dropdown",
           "id": "teleopRobotPlayedDefense",
           "options": [{
-              "optionName": "no",
+              "optionName": "No",
               "value": "false"
             },
             {
-              "optionName": "yes",
+              "optionName": "Yes",
               "value": "true"
             }
           ],
@@ -278,26 +278,29 @@
           "value": "N/A"
         },
         {
-          "optionName": "level 1",
+          "optionName": "Level 1",
           "value": "1"
         },
         {
-          "optionName": "level 2",
+          "optionName": "Level 2",
           "value": "2"
         },
         {
-          "optionName": "level 3",
+          "optionName": "Level 3",
           "value": "3"
         }
       ]
     }]
   },
   {
-    "name": "Additional Notes",
-    "type": "longString",
-    "max": 2048,
-    "min": 0,
-    "id": "additionalNotes",
-    "required": false
+    "name": "Summary",
+    "items": [{
+        "name": "Additional Notes",
+        "type": "longString",
+        "max": 2048,
+        "min": 0,
+        "id": "additionalNotes",
+        "required": false
+    }]
   }
 ]

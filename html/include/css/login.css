@@ -87,6 +87,7 @@
     left: 50%;
     height: 40px;
     width: 175px;
+    border: 0;
     border-radius: 10px;
     background-color: #666;
     font-family: "PL_Eras", "Eras Bold ITC", "Arial", "Verdana";

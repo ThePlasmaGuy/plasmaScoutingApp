@@ -1,0 +1,83 @@
+[{
+    "name": "Category 1",
+    "items": [{
+        "name": "String",
+        "type": "string",
+        "id": "string1",
+        "min": 1,
+        "max": 32,
+        "comment": "string"
+      },
+      {
+        "name": "Int",
+        "type": "int",
+        "id": "int1",
+        "min": 0,
+        "max": 99,
+        "comment": "int"
+      },
+      {
+        "name": "Checkbox",
+        "type": "checkbox",
+        "id": "checkbox1",
+        "comment": "checkbox"
+      },
+      {
+        "name": "Dropdown",
+        "type": "dropdown",
+        "id": "dropdown1",
+        "options": [{
+            "optionName": "Option 1",
+            "value": "op1"
+          },
+          {
+            "optionName": "Option 2",
+            "value": "op2"
+          },
+          {
+            "optionName": "Option 3",
+            "value": "op3"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Category 2",
+    "items": [{
+        "name": "String",
+        "type": "string",
+        "id": "string2",
+        "min": 1,
+        "max": 32,
+        "comment": "string"
+      },
+      {
+        "name": "Int",
+        "type": "int",
+        "id": "int2",
+        "min": 0,
+        "max": 99,
+        "comment": "int"
+      },
+      {
+        "name": "Dropdown",
+        "type": "dropdown",
+        "id": "dropdown2",
+        "options": [{
+            "optionName": "Option 1",
+            "value": "op1"
+          },
+          {
+            "optionName": "Option 2",
+            "value": "op2"
+          },
+          {
+            "optionName": "Option 3",
+            "value": "op3"
+          }
+        ]
+      }
+    ]
+  }
+]

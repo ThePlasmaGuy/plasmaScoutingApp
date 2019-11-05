@@ -4,6 +4,16 @@
   },
   {
     "id": "000001",
-    "name": "peabo"
+    "name": "peabo",
+    "separate": true
+  },
+  {
+    "id": "000002",
+    "name": "Leonard Hofstadter"
+  },
+  {
+    "id": "000003",
+    "name": "Howard Wolowitz",
+    "separate": true
   }
 ]

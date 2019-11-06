@@ -93,12 +93,12 @@ if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Databa
 if (checkDuplicateItems(formConfig)) throw "ERROR: Matching Form IDs found in matchForm.json!"; // If Duplicate Item IDs exist in form, throw Error
 var formData = createHTML.generateHTML(true, formConfig); // Generate Form HTML
 var analysisFormData = createHTML.generateHTML(false, formConfig) // Generate Analysis Form HTML (No Options Required -> requireAnswer = false)
-fs.outputFileSync("./html/form.html", formData); // Write to Disk
+fs.outputFileSync("./html/matchForm.html", formData); // Write to Disk
 
 
 
 // Check Form against Database
-const formHash = md5File.sync('./html/form.html');  // Unique Form Instance Identifier
+const formHash = md5File.sync('./html/matchForm.html');  // Unique Form Instance Identifier
 
 var matchedFormIdentity = true; // Whether Data Matches the Current Form
 var dataFiles = fs.readdirSync("./db"); // Get Files in Data Directory
@@ -335,7 +335,7 @@ app.get('/submit', function(req, res) {
 			res.send('Same UUID');
 		} else {
 			console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
-			res.send('ERROR: Incorrect Hash! Do you have the correct form.html?');
+			res.send('ERROR: Incorrect Hash! Do you have the correct matchForm.html?');
 		}
 
 		fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));

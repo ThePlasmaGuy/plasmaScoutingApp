@@ -75,7 +75,7 @@ typings/
 # Application Files
 db/*.json
 json/scouts.json
-html/form.html
+html/*form.html
 
 # .DS_Store Files
 .DS_Store

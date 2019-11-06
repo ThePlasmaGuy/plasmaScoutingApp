@@ -355,7 +355,7 @@ app.post('/', function(req, res) {
 	}
 	var sameHash = true;
 	for(var i = 0; i < dbArray.length; i++) {
-		if(dbArray[i].hash === hash.toString()) {
+		if(dbArray[i].hash === formHash.toString()) {
 			sameHash = true;
 		} else {
 			sameHash = false;
@@ -392,10 +392,16 @@ app.post('/', function(req, res) {
 				fs.writeFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify([dbNewObj]));
 			}
 		}
-		res.sendFile(path.join(__dirname + '/html/submit.html'));
+
+		formTemplate = fs.readFileSync('./html/templates/submit.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Success", metadata: templateMetadata, submissionInfo: 'Successful', submissionMessage: 'Data has been successfully recorded!', back: '../'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
 		console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
-		res.sendFile(path.join(__dirname + '/html/error.html'));
+
+		formTemplate = fs.readFileSync('./html/templates/submit.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "ERROR", metadata: templateMetadata, submissionInfo: 'Failed', submissionMessage: 'Hash Mismatch: Client Form does not match Server...', back: '../'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	}
 
 	fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));

@@ -21,25 +21,6 @@ var scoutIDs = []; // Local Scout Information
 
 
 // Helper Functions
-function isValidScoutID(id) { // Check a given ScoutID against valid IDs
-	for(var i = 0; i < scoutIDs.length; i++) {
-		if(scoutIDs[i].id == id) {
-			return true;
-			break;
-		}
-	}
-}
-
-function getScoutName(id) { // Get Scout Name from a ScoutID
-	for(var i = 0; i < scoutIDs.length; i++) {
-		if(scoutIDs[i].id == id) {
-			return scoutIDs[i].name;
-			break;
-		}
-	}
-	return null;
-}
-
 function randomValueHex(len) { // Generate a Random Hex Value of a given length
 	return crypto
 		.randomBytes(Math.ceil(len / 2))
@@ -47,9 +28,41 @@ function randomValueHex(len) { // Generate a Random Hex Value of a given length
 		.slice(0, len)
 }
 
+function getInputObjects(formConfig) { // Get Array of Input Objects in a given Form Configuration
+	var inputObjects = []
+
+	for (const category of formConfig) { // Pull Input Objects in a given Category
+		if (category.type) { // Category is Item, Add to Array
+			inputObjects.push(category);
+			continue;
+		}
+
+		if (category.categories) { // Category contains Sub-categories, recurse
+			inputObjects.push(getInputObjects(category.categories));
+		} else {
+			inputObjects.push(category.items); // Add Category Input Items to Array
+		}
+	}
+
+	return inputObjects; // Return compiled array
+} 
+
+function checkDuplicateItems(formConfig) { // Check a given Form Configuration for duplicate information
+	var uniqueObjects = new Set(); // Set of Item ID Values
+	var formInputObjects = getInputObjects(formConfig); // Input Objects contained in formConfig
+
+	// Determine if Duplicate Items exist by iterating over each formItem and adding their IDs to the uniqueObject Set
+	var hasDuplicateItems = formInputObjects.some(function(formItem) {
+		// Since the Javascript Set type only stores unique items, a duplicate item will not cause the Set size to increase and will return True
+		return uniqueObjects.size === uniqueObjects.add(formItem.id).size;
+	})
+
+	return hasDuplicateItems;
+}
+
 
 // Import Static Data
-var formConfig = JSON.parse(fs.readFileSync('inputs.json', 'utf8')); // Scouting Form Configuration Data
+var formConfig = JSON.parse(fs.readFileSync('./json/matchForm.json', 'utf8')); // Scouting Form Configuration Data
 var templateMetadata = fs.readFileSync('./html/templates/meta.html', 'utf8');; // Template Metadata
 
 
@@ -58,7 +71,7 @@ if (fs.existsSync("./json/scouts.json")) { // If Scout Identification Exists, Lo
 	scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
 } else {
 	scoutIDs = [{"id": "000000", "name": "Administrator"}];
-	fs.outputFileSync("./json/scouts.json", "[{\n    \"id\": \"000000\",\n    \"name\": \"Administrator\"\n  }\n]");
+	fs.outputFileSync("./json/scouts.json", "[{\n    \"id\": \"000000\",\n    \"name\": \"Administrator\",\n    \"separate\": false,\n  }\n]");
 }
 
 
@@ -66,7 +79,7 @@ if (fs.existsSync("./json/scouts.json")) { // If Scout Identification Exists, Lo
 if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Database
 	dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
 } else { // Else, Create New Database
-	fs.outputFileSync("./db/db.json", "{}");
+	fs.outputFileSync("./db/db.json", "[]");
 }
 
 
@@ -80,18 +93,24 @@ fs.outputFileSync("./html/form.html", formData); // Write to Disk
 // Check Form against Database
 const formHash = md5File.sync('./html/form.html');  // Unique Form Instance Identifier
 
-var matchedFormIdentity = true;
+var matchedFormIdentity = true; // Whether Data Matches the Current Form
+var dataFiles = fs.readdirSync("./db"); // Get Files in Data Directory
 
-for(var i = 0; i < dbArray.length; i++) {
-	if(dbArray[i].hash === formHash.toString()) { // Check Form identity against current Data Entry
-		matchedFormIdentity = true; // Form Matches Data Entry
-	} else {
-		matchedFormIdentity = false; // Data Entry does not match loaded Form 
-		break;
+for (dataFile of dataFiles) { // Iterate over each file in data directory
+	try {
+		var fileContents = JSON.parse(fs.readFileSync("./db/" + dataFile)); // Parse File Contents
+		
+		for (entry of fileContents) { // Loop through Data Entries
+			if (entry.hash !== formHash.toString()) { // Check Entry against current Form
+				matchedFormIdentity = false; // Data does not match loaded form
+			}
+		}
+	} catch {
+		fs.unlinkSync("./db/" + dataFile); // Unlink Errored File
 	}
 }
 
-if(matchedFormIdentity != true) { // If Form is not a complete match for all Data Entries, throw ERROR
+if (matchedFormIdentity !== true) { // If Form is not a complete match for all Data Entries, throw ERROR
 	throw "ERROR: The database contains data from a form with a different hash than the form found!";
 }
 
@@ -117,7 +136,7 @@ app.use(bodyParser.urlencoded({
 
 // API Endpoints
 api.get('/', function(req, res) {
-	if(isValidScoutID(req.query.scoutID) === true) {
+	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
 		res.send(formData);
 	} else {
 		res.send('INVALID SCOUT ID');
@@ -127,12 +146,12 @@ api.get('/', function(req, res) {
 
 // Application Endpoints
 app.get('/', function(req, res) { 
-	if(isValidScoutID(req.query.scoutID) === true) {
+	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
 		formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
 		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: formData}); // Render HTML Template
 		res.send(page); // Send Rendered HTML to Client
 
-		if (debug === true) console.log("LOGIN: Scout \"" + getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
+		if (debug === true) console.log("[/]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
 	} else if(!req.query.scoutID) {
 		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
 		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
@@ -147,9 +166,9 @@ app.get('/', function(req, res) {
 });
 
 app.get('/verify', function(req, res) {
-	if(isValidScoutID(req.query.scoutID) === true) {
+	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
 		res.send('VALID');
-		console.log("new Electron client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + getScoutName(req.query.scoutID));
+		console.log("new Electron client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID));
 	} else {
 		res.send('INVALID');
 	}
@@ -157,10 +176,12 @@ app.get('/verify', function(req, res) {
 
 
 app.get('/analysis', function(req, res) {
-	if(isValidScoutID(req.query.scoutID) === true) {
+	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
 		formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
 		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: analysisFormData}); // Render HTML Template (w/ Analysis Form)
 		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("[/analysis]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
 	} else if(!req.query.scoutID) {
 		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
 		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
@@ -178,62 +199,9 @@ app.post('/analysis', function(req, res) {
 	res.send(searchDB.searchDB(JSON.parse(fs.readFileSync("./db/db.json")), req.body));
 });
 
-/*
-app.get('/analysis', function(req, res) {
-
-	if(isValidScoutID(req.query.scoutID) === true) {
-		var database = JSON.parse(fs.readFileSync('./db/db.json'));
-		if(req.query.team) {
-			if(req.query.match) {
-				console.log("TEAM: " + req.query.team + ", MATCH: " + req.query.match);
-				var responseString = "";
-				for(var i = 0; i < database.length; i++) {
-					if(database[i].data.teamNumber == req.query.team && database[i].data.matchNumber == req.query.match) {
-						responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
-					}
-				}
-				if(responseString == "") {
-					responseString = "No data found matching request";
-				}
-				res.send(responseString);
-			} else {
-				console.log("TEAM: " + req.query.team);
-				var responseString = "";
-				for(var i = 0; i < database.length; i++) {
-					if(database[i].data.teamNumber == req.query.team) {
-						responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
-					}
-				}
-				if(responseString == "") {
-					responseString = "No data found matching request";
-				}
-				res.send(responseString);
-			}
-		} else if(req.query.match) {
-			console.log("MATCH: " + req.query.match);
-			var responseString = "";
-			for(var i = 0; i < database.length; i++) {
-				if(database[i].data.matchNumber == req.query.match) {
-					responseString += "<pre class='prettyprint'>" + JSON.stringify(database[i].data, null, 4) + "</pre><br>";
-				}
-			}
-			if(responseString == "") {
-				responseString = "No data found matching request";
-			}
-			res.send(responseString);
-		} else {
-			res.sendFile(path.join(__dirname + '/html/query.html'));
-		}
-	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
-	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
-	}
-});
-*/
-
 app.get('/download', function(req, res) {
-	if(isValidScoutID(req.query.scoutID) === true) {
+	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
+		if (debug === true) console.log("[/download]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
 		var jsonMain;
 		try {
 			jsonMain = JSON.parse(fs.readFileSync('./db/db.json'));
@@ -273,7 +241,9 @@ app.get('/download', function(req, res) {
 });
 
 app.get('/downloadExcel', function(req, res) {
-	if(isValidScoutID(req.query.scoutID) === true) {
+	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
+		if (debug === true) console.log("[/downloadExcel]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
+
 		var jsonMain;
 		try {
 			jsonMain = JSON.parse(fs.readFileSync('./db/db.json'));
@@ -313,7 +283,7 @@ app.get('/downloadExcel', function(req, res) {
 });
 
 app.get('/submit', function(req, res) {
-	if(isValidScoutID(req.query.scoutID) === true) {
+	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
 		if(debug === true) {
 			console.log(decodeURIComponent(req.query.data));
 		}
@@ -351,7 +321,7 @@ app.get('/submit', function(req, res) {
 				"uuid": getData.uuid,
 				"data": getData.data
 			}
-			dbPushObj.data.scoutID = req.query.scoutID;
+			dbPushObj.scoutID = req.query.scoutID;
 			dbArray.push(dbPushObj);
 			res.send('Form Submitted!');
 		} else if(uuidFound === true) {
@@ -368,10 +338,6 @@ app.get('/submit', function(req, res) {
 });
 
 app.post('/', function(req, res) {
-
-	if(debug === true) {
-		console.log(req.body);
-	}
 	dbArray = [];
 	try {
 		if(fs.existsSync("./db/db.json")) {
@@ -382,7 +348,7 @@ app.post('/', function(req, res) {
 	}
 	var sameHash = true;
 	for(var i = 0; i < dbArray.length; i++) {
-		if(dbArray[i].hash === formHash.toString()) {
+		if(dbArray[i].hash === hash.toString()) {
 			sameHash = true;
 		} else {
 			sameHash = false;
@@ -391,13 +357,34 @@ app.post('/', function(req, res) {
 	}
 	if(sameHash === true) {
 		var dbNewObj = {
-			"hash": formHash,
+			"hash": hash,
 			"ip": req.ip,
 			"uuid": randomValueHex(256),
 			"data": req.body
 		}
-		dbNewObj.data.scoutID = req.query.scoutID;
-		dbArray.push(dbNewObj);
+		dbNewObj.scoutID = req.query.scoutID;
+		var separateUser = false
+		for(var i = 0; i < scoutIDs.length; i++) {
+			if(scoutIDs[i].id == req.query.scoutID) {
+				if(scoutIDs[i].separate === true) {
+					separateUser = true;
+				}
+				break;
+			}
+		}
+		if(separateUser === false) {
+			dbArray.push(dbNewObj);
+		} else {
+			console.log("User \"" + searchDB.getScoutName(req.query.scoutID) + "\" has the \"SEPARATE\" flag set to TRUE, submission will be saved to ./db/db" + req.query.scoutID + ".json instead of regular database.");
+			var separateJSON = []
+			try {
+				separateJSON = JSON.parse(fs.readFileSync("./db/db" + req.query.scoutID + ".json"));
+				separateJSON.push(dbNewObj);
+				fs.writeFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify(separateJSON));
+			} catch {
+				fs.writeFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify([dbNewObj]));
+			}
+		}
 		res.sendFile(path.join(__dirname + '/html/submit.html'));
 	} else {
 		console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");

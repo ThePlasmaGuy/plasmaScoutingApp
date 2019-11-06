@@ -39,7 +39,7 @@
   {
     "name": "Sandstorm",
     "categories": [{
-        "name": "Did They Cross the Line During Sandstorm?",
+        "name": "Crossed Line During Sandstorm?",
         "type": "dropdown",
         "id": "sandsormCrossLine",
         "options": [{

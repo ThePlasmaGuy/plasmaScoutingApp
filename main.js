@@ -364,7 +364,7 @@ app.post('/', function(req, res) {
 	}
 	if(sameHash === true) {
 		var dbNewObj = {
-			"hash": hash,
+			"hash": formHash,
 			"ip": req.ip,
 			"uuid": randomValueHex(256),
 			"data": req.body

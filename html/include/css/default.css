@@ -28,6 +28,7 @@ body, html {
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
+    touch-action: pan-y;
     background: rgb(156,25,180);
     background: -moz-linear-gradient(130deg, rgba(156,25,180,1) 0%, rgba(141,0,255,1) 100%);
     background: -webkit-linear-gradient(130deg, rgba(156,25,180,1) 0%,rgba(141,0,255,1) 100%);

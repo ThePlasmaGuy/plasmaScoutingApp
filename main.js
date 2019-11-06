@@ -38,9 +38,9 @@ function getInputObjects(formConfig) { // Get Array of Input Objects in a given 
 		}
 
 		if (category.categories) { // Category contains Sub-categories, recurse
-			inputObjects.push(getInputObjects(category.categories));
+			inputObjects.push(...getInputObjects(category.categories));
 		} else {
-			inputObjects.push(category.items); // Add Category Input Items to Array
+			inputObjects.push(...category.items); // Add Category Input Items to Array
 		}
 	}
 
@@ -48,16 +48,22 @@ function getInputObjects(formConfig) { // Get Array of Input Objects in a given 
 } 
 
 function checkDuplicateItems(formConfig) { // Check a given Form Configuration for duplicate information
-	var uniqueObjects = new Set(); // Set of Item ID Values
-	var formInputObjects = getInputObjects(formConfig); // Input Objects contained in formConfig
+	var duplicateItemExists = false; // Whether a duplicate item ID has been found in the provided form
+	var scannedIDs = []; // Array of IDs of Scanned Form Items
+	var inputObjects = getInputObjects(formConfig); // Simplified list of Form Items from formConfig
 
-	// Determine if Duplicate Items exist by iterating over each formItem and adding their IDs to the uniqueObject Set
-	var hasDuplicateItems = formInputObjects.some(function(formItem) {
-		// Since the Javascript Set type only stores unique items, a duplicate item will not cause the Set size to increase and will return True
-		return uniqueObjects.size === uniqueObjects.add(formItem.id).size;
-	})
+	for (inputObject of inputObjects) { // Loop through Form Items
+		if (scannedIDs.includes(inputObject.id)) { // If ID in Array of Scanned Items, Duplicate Found
+			if (debug === true) console.log('Duplicate Item: ' + JSON.stringify(inputObject)); // Log Duplicate Item to Console if Debug Enabled
+			
+			duplicateItemExists = true;
+			break;
+		} else { // Duplicate not found, add ID to scannedIDs
+			scannedIDs.push(inputObject.id);
+		}
+	}
 
-	return hasDuplicateItems;
+	return duplicateItemExists;
 }
 
 
@@ -84,6 +90,7 @@ if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Databa
 
 
 // Generate Match Form
+if (checkDuplicateItems(formConfig)) throw "ERROR: Matching Form IDs found in matchForm.json!"; // If Duplicate Item IDs exist in form, throw Error
 var formData = createHTML.generateHTML(true, formConfig); // Generate Form HTML
 var analysisFormData = createHTML.generateHTML(false, formConfig) // Generate Analysis Form HTML (No Options Required -> requireAnswer = false)
 fs.outputFileSync("./html/form.html", formData); // Write to Disk

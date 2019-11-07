@@ -1,0 +1,106 @@
+/************************************************
+ *         Plasma Robotics Scouting App         *
+ *           Login Application Styles           *
+ ***********************************************/
+
+#login {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 200px;
+    width: calc(100% - 50px) !important;
+    max-width: 275px;
+    padding: 20px;
+    border-radius: 15px;
+    background-color: #eaeaea;
+    text-align: center;
+    transform: translateY(-50%) translateX(-50%);
+}
+
+#login-title {
+    position: absolute;
+    top: 18px;
+    width: calc(100% - 40px);
+    font-family: "PL_Eras", "Eras Bold ITC", "Arial", "Verdana";
+    font-size: 2em;
+    color: #7B3188;
+    margin: 0;
+}
+
+#login-incorrect {
+    position: absolute;
+    top: 53px;
+    left: 50%;
+    height: 20px;
+    width: 185px;
+    z-index: 2;
+    margin: 0;
+    background-color: #F66;
+    border-radius: 5px;
+    color: #fff;
+    line-height: 20px;
+    transform: translateX(-50%);
+}
+
+#login-description {
+    position: absolute;
+    top: 69px;
+    left: 50%;
+    height: 20px;
+    width: 65px;
+    z-index: 2;
+    margin: 0;
+    background-color: #666;
+    border-radius: 5px;
+    color: #fff;
+    line-height: 20px;
+    transform: translateX(-50%);
+}
+
+#login-incorrect + #login-description {
+    top: 81px;
+}
+
+#login-identification {
+    position: absolute;
+    top: 84px;
+    left: 50%;
+    height: 32px;
+    width: 110px;
+    border: 2px solid #666;
+    border-radius: 5px;
+    outline: none;
+    font-family: "PL_Eras", "Eras Bold ITC", "Arial", "Verdana";
+    color: #7B3188;
+    text-align: center;
+    font-size: 1.1em;
+    transform: translateX(-50%);
+}
+
+#login-incorrect + #login-description + #login-identification{
+    top: 96px;
+}
+
+#login-submit {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    height: 40px;
+    width: 175px;
+    border: 0;
+    border-radius: 10px;
+    background-color: #666;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    font-family: "PL_Eras", "Eras Bold ITC", "Arial", "Verdana";
+    font-size: 1.2em;
+    line-height: 35px;
+    color: #eaeaea;
+    cursor: pointer;
+    transform: translateX(-50%);
+    transition: background-color 250ms ease-in-out;
+}
+
+#login-submit:hover {
+    background-color: #888;
+}

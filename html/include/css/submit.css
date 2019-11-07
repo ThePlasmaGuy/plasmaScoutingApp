@@ -1,0 +1,60 @@
+/************************************************
+ *         Plasma Robotics Scouting App         *
+ *              Submit Page Styles              *
+ ***********************************************/
+
+#submissionInfo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 200px;
+    width: calc(100% - 50px) !important;
+    max-width: 275px;
+    padding: 20px;
+    border-radius: 15px;
+    background-color: #eaeaea;
+    text-align: center;
+    transform: translateY(-50%) translateX(-50%);
+}
+
+#submissionTitle {
+    position: absolute;
+    top: 18px;
+    width: calc(100% - 40px);
+    font-family: "PL_Eras", "Eras Bold ITC", "Arial", "Verdana";
+    font-size: 1.9em;
+    color: #7B3188;
+    margin: 0;
+}
+
+#submissionMessage {
+    position: absolute;
+    top: 90px;
+    left: 0;
+    height: 60px;
+    width: 100%;
+    padding: 0 10px;
+    margin: 0;
+    font-size: 1.2em;
+}
+
+#submissionBack {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    height: 40px;
+    width: 175px;
+    border: 0;
+    border-radius: 10px;
+    background-color: #666;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    font-family: "PL_Eras", "Eras Bold ITC", "Arial", "Verdana";
+    font-size: 1.2em;
+    text-decoration: none;
+    line-height: 40px;
+    color: #eaeaea;
+    cursor: pointer;
+    transform: translateX(-50%);
+    transition: background-color 250ms ease-in-out;
+}

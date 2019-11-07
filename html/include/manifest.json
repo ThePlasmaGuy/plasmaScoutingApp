@@ -1,0 +1,14 @@
+{
+  "name": "Plasma Scout",
+  "short_name": "Plasma Scout",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "img/icon/icon-192.png",
+      "sizes": "192x192"
+    }, {
+      "src": "img/icon/icon-512.png",
+      "sizes": "512x512"
+    }
+  ]
+}

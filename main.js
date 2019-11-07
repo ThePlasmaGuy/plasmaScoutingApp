@@ -1,137 +1,210 @@
-const fs = require('fs');
-const createHTML = require("./lib/createHTML.js");
-const searchDB = require("./lib/searchDB.js");
-const express = require('express');
+const fs = require('fs-extra');
 const path = require('path');
-const bodyParser = require('body-parser');
-const md5File = require('md5-file');
 const crypto = require('crypto');
+const express = require('express');
+const md5File = require('md5-file');
+const mustache = require('mustache');
+const bodyParser = require('body-parser');
 const readlineSync = require('readline-sync');
-const port = 80;
-const apiPort = 81;
+const createHTML = require("./lib/createHTML.js"); // Form Generation
+const searchDB = require("./lib/searchDB.js"); // Database Search Tools
+
+
+// Configuration Values
+const port = 80; // Live Application Port
+const apiPort = 81; // API Port
 const debug = true;
 
-var jsonData = JSON.parse(fs.readFileSync('./json/inputs.json', 'utf8'));
-var css = fs.readFileSync("./style.css");
 
-var rawHtml = createHTML.generateHTML(jsonData);
+// Container Variables
+var dbArray = []; // Local Scouting Database
+var scoutIDs = []; // Local Scout Information
 
-console.log("HTML: " + createHTML.generateHTML(jsonData) + "\n\n");
 
-var scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
+// Helper Functions
+function randomValueHex(len) { // Generate a Random Hex Value of a given length
+	return crypto
+		.randomBytes(Math.ceil(len / 2))
+		.toString('hex')
+		.slice(0, len)
+}
 
-console.log("Scouts:");
-for(var i = 0; i < scoutIDs.length; i++) {
-	if(scoutIDs[i].separate === true) {
-		console.log("Name " + scoutIDs[i].name + ", ID " + scoutIDs[i].id + ", Separate=TRUE");
-	} else {
-		console.log("Name " + scoutIDs[i].name + ", ID " + scoutIDs[i].id + ", Separate=FALSE");
+function getInputObjects(formConfig) { // Get Array of Input Objects in a given Form Configuration
+	var inputObjects = []
+
+	for (const category of formConfig) { // Pull Input Objects in a given Category
+		if (category.type) { // Category is Item, Add to Array
+			inputObjects.push(category);
+			continue;
+		}
+
+		if (category.categories) { // Category contains Sub-categories, recurse
+			inputObjects.push(...getInputObjects(category.categories));
+		} else {
+			inputObjects.push(...category.items); // Add Category Input Items to Array
+		}
 	}
+
+	return inputObjects; // Return compiled array
+} 
+
+function checkDuplicateItems(formConfig) { // Check a given Form Configuration for duplicate information
+	var duplicateItemExists = false; // Whether a duplicate item ID has been found in the provided form
+	var scannedIDs = []; // Array of IDs of Scanned Form Items
+	var inputObjects = getInputObjects(formConfig); // Simplified list of Form Items from formConfig
+
+	for (inputObject of inputObjects) { // Loop through Form Items
+		if (scannedIDs.includes(inputObject.id)) { // If ID in Array of Scanned Items, Duplicate Found
+			if (debug === true) console.log('Duplicate Item: ' + JSON.stringify(inputObject)); // Log Duplicate Item to Console if Debug Enabled
+			
+			duplicateItemExists = true;
+			break;
+		} else { // Duplicate not found, add ID to scannedIDs
+			scannedIDs.push(inputObject.id);
+		}
+	}
+
+	return duplicateItemExists;
 }
-console.log("\n\n");
 
 
-var app = new express();
+// Debug Logging
+console.log('Loading Resources...' + (debug ? '\n[DEBUG MODE ENABLED\n\n' : '\n\n'));
 
-var apiApp = new express();
 
-var dbArray = [];
+// Import Static Data
+var formConfig = JSON.parse(fs.readFileSync('./json/matchForm.json', 'utf8')); // Scouting Form Configuration Data
+var templateMetadata = fs.readFileSync('./html/templates/meta.html', 'utf8');; // Template Metadata
 
-function randomValueHex(len) {
-	return crypto.randomBytes(Math.ceil(len / 2)).toString('hex').slice(0, len);
+
+// Generate ScoutIDs
+if (fs.existsSync("./json/scouts.json")) { // If Scout Identification Exists, Load to Local
+	scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
+} else {
+	scoutIDs = [{"id": "000000", "name": "Administrator"}];
+	fs.outputFileSync("./json/scouts.json", "[{\n    \"id\": \"000000\",\n    \"name\": \"Administrator\",\n    \"separate\": false,\n  }\n]");
 }
 
-app.use(bodyParser.json());
+if (debug) { // Log Scout Information
+	console.log('Registered Scouts:')
+	for (scout of scoutIDs) {
+		console.log(`[${scout.id}] ${scout.name}` + (scout.seperate ? ' - Data Seperated' : '')); // Show Seperation if Enabled
+	}
+	console.log('\n')
+}
+
+
+// Generate Match Form
+if (checkDuplicateItems(formConfig)) throw Error("[FORM] ERROR: Matching Form IDs found in inputs.json!"); // If Duplicate Item IDs exist in form, throw Error
+var formData = createHTML.generateHTML(true, formConfig); // Generate Form HTML
+var analysisFormData = createHTML.generateHTML(false, formConfig) // Generate Analysis Form HTML (No Options Required -> requireAnswer = false)
+fs.outputFileSync("./html/matchForm.html", formData); // Write to Disk
+
+
+// Generate Database
+if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Database
+	dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
+} else { // Else, Create New Database
+	fs.outputFileSync("./db/db.json", "[]");
+}
+
+
+// Check Form against Database
+const formHash = md5File.sync('./html/matchForm.html');  // Unique Form Instance Identifier
+
+if (debug) console.log(`[FORM] Match Form Hash: ${formHash}`);
+
+var dataFiles = fs.readdirSync("./db"); // Get Files in Data Directory
+var deleteMismatchedData = null; // Whether to delete data files that do not match
+
+for (dataFile of dataFiles) { // Iterate over each file in data directory
+	if (debug) console.log(`[DATA] Checking Hash of ./db/${dataFile}`);
+	var fileContents = JSON.parse(fs.readFileSync(`./db/${dataFile}`)); // Parse File Contents
+	var discoveredHashes = [];
+	
+	for (entry of fileContents) { // Loop through Data Entries
+		if (!(discoveredHashes.includes(entry.hash)) && debug) { // If Debug mode, check if hash has been logged
+			discoveredHashes.push(entry.hash); // Push hash to discoveredHashes if not there
+			console.log(`[DATA] Hash ${entry.hash} found in ${dataFile}` + (entry.hash !== formHash.toString() ? ' - Wrong Hash' : '')); // Log unique hash to console
+		}
+		if (entry.hash !== formHash.toString()) { // Check Entry against current Form
+			if (deleteMismatchedData === null) {
+				deleteMismatchedData = readlineSync.question(`\n[DATA] ./db/${dataFile} contains data with mismatching hashes.  Delete this file and other files with incorrect hashes? (Y/N)`);
+				if (deleteMismatchedData.toLowerCase() === "y") {
+					console.log(`[DATA] Removing ./db/${dataFile}`);
+					deleteMismatchedData = true;
+
+					fs.unlinkSync(`./db/${dataFile}`);
+					
+					if (dataFile == 'db.json') dbArray = []; // Reset dbArray if db.json was deleted due to bad data
+
+				} else {
+					throw Error(`[DATA] Please Remove ./db/${dataFile} to continue.`)
+				} 
+			} else if (deleteMismatchedData) {
+				console.log(`[DATA] Deleting ${dataFile} (Mismatched Hashes)`)
+				fs.unlinkSync(`./db/${dataFile}`);
+
+				if (dataFile == 'db.json') dbArray = []; // Reset dbArray if db.json was deleted due to bad data
+			} else {
+				throw Error(`[DATA] ./db/${dataFile} contains mismatched hashes, please remove to continue.`)
+			}
+
+			break; // No need to check further data entries in this file
+		}
+	}
+	if (debug) console.log("\n");
+}
+
+
+
+
+// Initialize Express Instances
+var app = new express(); // Live Application
+var api = new express(); // API
+
+app.use(express.static(path.join(__dirname + '/html/include'))); // Serve static files from include directory
+app.use(bodyParser.json()); // Install Incoming Request Parsing Middleware
 app.use(bodyParser.urlencoded({
 	extended: true
 }));
-apiApp.get('/', function(req, res) {
+
+
+// API Endpoints
+api.get('/', function(req, res) {
 	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
-		res.send(rawHtml);
+		res.send(formData);
 	} else {
 		res.send('INVALID SCOUT ID');
 	}
 })
 
-apiApp.listen(apiPort);
 
-fs.writeFileSync("./html/form.html", rawHtml);
-
-const hash = md5File.sync('./html/form.html');
-console.log("Hash of form is " + hash);
-
-if(!fs.existsSync("./db/")) {
-	console.log("\n\n./db/ director does not exist, creating directory.\n\n");
-	fs.mkdirSync("./db/");
-}
-
-try {
-	if(fs.existsSync("./db/db.json")) {
-		dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
-	}
-} catch {
-	fs.writeFileSync("./db/db.json", "");
-}
-
-var sameHash0 = true;
-var files = fs.readdirSync("./db")
-for(var i in files) {
-	try {
-		var testFile = JSON.parse(fs.readFileSync("./db/" + files[i]));
-		console.log("Checking hashes of file " + files[i]);
-		for(var j = 0; j < testFile.length; j++) {
-			console.log("Hash of entry " + j + " of " + files[i] + " is " + testFile[j].hash);
-			if(testFile[j].hash !== hash.toString()) {
-				sameHash0 = false;
-			}
-		}
-		console.log("\n");
-	} catch {
-		fs.unlinkSync("./db/" + files[i]);
-	}
-}
-console.log("\n");
-if(sameHash0 === false) {
-	var delDB = readlineSync.question("Database contains mismatching hashes. Delete files with incorrect hashes? (Y/N): ");
-	if(delDB === "Y") {
-		for(var i in files) {
-			try {
-				var testFile = JSON.parse(fs.readFileSync("./db/" + files[i]));
-				console.log("Checking hashes of file " + files[i]);
-				for(var j = 0; j < testFile.length; j++) {
-					console.log("Hash of entry " + j + " of " + files[i] + " is " + testFile[j].hash);
-					if(testFile[j].hash !== hash.toString()) {
-						fs.unlinkSync("./db/" + files[i]);
-						break;
-					}
-				}
-				console.log("\n");
-			} catch {
-				fs.unlinkSync("./db/" + files[i]);
-			}
-		}
-	} else {
-		throw "ERROR: The database contains data from a form with a different hash than the form found!";
-	}
-}
-
-var html = "<!DOCTYPE html><html><head><style>" + css + "</style><title>Scouting App</title></head><body><form id='mainForm' action='/submit' method='POST'>" + rawHtml + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
-
-app.get('/', function(req, res) {
+// Application Endpoints
+app.get('/', function(req, res) { 
 	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
-		res.send(html);
-		console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID) + ", page /");
+		formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: formData}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("[/]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("[/] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
 app.get('/verify', function(req, res) {
 	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
 		res.send('VALID');
-		console.log("new Electron client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID));
+		console.log("[ELECTRON] new Electron client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID));
 	} else {
 		res.send('INVALID');
 	}
@@ -140,16 +213,21 @@ app.get('/verify', function(req, res) {
 
 app.get('/analysis', function(req, res) {
 	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
-		var rawHtmlNonRequire = createHTML.generateAnalysisHTML(JSON.parse(fs.readFileSync("./json/inputs.json")));
+		formTemplate = fs.readFileSync('./html/templates/formTemplate.html', 'utf8'); // Form HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Match", metadata: templateMetadata, formData: analysisFormData}); // Render HTML Template (w/ Analysis Form)
+		res.send(page); // Send Rendered HTML to Client
 
-		var nonRequireHTML = "<!DOCTYPE html><html><head><style>" + css + "</style><title>Scouting App</title></head><body><form id='mainForm' action='/submitAnalysis' method='POST'>" + rawHtmlNonRequire + "<input type='submit' id='submit' value='Submit'/></form><script type='text/javascript'>document.getElementById('mainForm').setAttribute('action', window.location.href)</script></body></html>";
-		res.send(nonRequireHTML);
-		console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID) + ", page /analysis");
-		//
+		if (debug === true) console.log("[/analysis]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("[/analysis] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
@@ -161,10 +239,9 @@ app.post('/analysis', function(req, res) {
 	}
 });
 
-
 app.get('/download', function(req, res) {
 	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
-		console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID) + ", page /download");
+		if (debug === true) console.log("[/download]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
 		var jsonMain;
 		try {
 			jsonMain = JSON.parse(fs.readFileSync('./db/db.json'));
@@ -191,15 +268,22 @@ app.get('/download', function(req, res) {
 			res.send("No data has been collected yet!");
 		}
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("[/download] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
 app.get('/downloadExcel', function(req, res) {
 	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
-		console.log("new client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID) + ", page /downloadExcel");
+		if (debug === true) console.log("[/downloadExcel]: Scout \"" + searchDB.getScoutName(req.query.scoutID) +"\" (" + req.query.scoutID + ") has logged in at " + req.ip);
+
 		var jsonMain;
 		try {
 			jsonMain = JSON.parse(fs.readFileSync('./db/db.json'));
@@ -226,9 +310,15 @@ app.get('/downloadExcel', function(req, res) {
 			res.send("No data has been collected yet!");
 		}
 	} else if(!req.query.scoutID) {
-		res.sendFile(path.join(__dirname + '/html/login.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		res.sendFile(path.join(__dirname + '/html/loginIncorrect.html'));
+		formTemplate = fs.readFileSync('./html/templates/login.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
+
+		if (debug === true) console.log("[/downloadExcel] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
@@ -244,11 +334,11 @@ app.get('/submit', function(req, res) {
 				dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
 			}
 		} catch {
-			fs.writeFileSync("./db/db.json", "");
+			fs.outputFileSync("./db/db.json", "[]");
 		}
 		var sameHash = true;
 		for(var i = 0; i < dbArray.length; i++) {
-			if(dbArray[i].hash === getData.hash && getData.hash === hash) {
+			if(dbArray[i].hash === getData.hash && getData.hash === formHash) {
 				sameHash = true;
 			} else {
 				sameHash = false;
@@ -266,7 +356,7 @@ app.get('/submit', function(req, res) {
 		}
 		if(sameHash === true && uuidFound === false) {
 			var dbPushObj = {
-				"hash": hash,
+				"hash": formHash,
 				"ip": req.ip,
 				"uuid": getData.uuid,
 				"data": getData.data
@@ -277,11 +367,11 @@ app.get('/submit', function(req, res) {
 		} else if(uuidFound === true) {
 			res.send('Same UUID');
 		} else {
-			console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
-			res.send('ERROR: Incorrect Hash! Do you have the correct form.html?');
+			console.log("[/submit] Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
+			res.send('ERROR: Incorrect Hash! Do you have the correct matchForm.html?');
 		}
 
-		fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));
+		fs.outputFileSync("./db/db.json", JSON.stringify(dbArray));
 	} else {
 		res.send('INVALID SCOUT ID');
 	}
@@ -294,11 +384,11 @@ app.post('/', function(req, res) {
 			dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
 		}
 	} catch {
-		fs.writeFileSync("./db/db.json", "");
+		fs.outputFileSync("./db/db.json", "[]");
 	}
 	var sameHash = true;
 	for(var i = 0; i < dbArray.length; i++) {
-		if(dbArray[i].hash === hash.toString()) {
+		if(dbArray[i].hash === formHash.toString()) {
 			sameHash = true;
 		} else {
 			sameHash = false;
@@ -307,7 +397,7 @@ app.post('/', function(req, res) {
 	}
 	if(sameHash === true) {
 		var dbNewObj = {
-			"hash": hash,
+			"hash": formHash,
 			"ip": req.ip,
 			"uuid": randomValueHex(256),
 			"data": req.body
@@ -330,20 +420,31 @@ app.post('/', function(req, res) {
 			try {
 				separateJSON = JSON.parse(fs.readFileSync("./db/db" + req.query.scoutID + ".json"));
 				separateJSON.push(dbNewObj);
-				fs.writeFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify(separateJSON));
+				fs.outputFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify(separateJSON));
 			} catch {
-				fs.writeFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify([dbNewObj]));
+				fs.outputFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify([dbNewObj]));
 			}
 		}
-		res.sendFile(path.join(__dirname + '/html/submit.html'));
+		
+		console.log(`[DATA][/] New Data Submitted by Scout ${req.query.scoutID} (${searchDB.getScoutName(req.query.scoutID)})`);
+
+		formTemplate = fs.readFileSync('./html/templates/submit.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "Success", metadata: templateMetadata, submissionInfo: 'Successful', submissionMessage: 'Data has been successfully recorded!', back: '../'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	} else {
-		console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
-		res.sendFile(path.join(__dirname + '/html/error.html'));
+		console.log("[/] Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
+
+		formTemplate = fs.readFileSync('./html/templates/submit.html', 'utf8'); // Login HTML Template
+		page = mustache.render(formTemplate, {pageTitle: "ERROR", metadata: templateMetadata, submissionInfo: 'Failed', submissionMessage: 'Hash Mismatch: Client Form does not match Server...', back: '../'}); // Render HTML Template
+		res.send(page); // Send Rendered HTML to Client
 	}
 
-	fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));
+	fs.outputFileSync("./db/db.json", JSON.stringify(dbArray));
 
 });
 
-console.log("listening on port " + port + "\n\n\n\n\n");
+
+// Open Express Instances
+console.log("Application Live on Port " + port);
 app.listen(port);
+api.listen(apiPort);

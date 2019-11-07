@@ -6,7 +6,10 @@
   "dependencies": {
     "express": "^4.17.1",
     "file": "^0.2.2",
-    "md5-file": "^4.0.0"
+    "fs-extra": "^8.1.0",
+    "md5-file": "^4.0.0",
+    "mustache": "^3.1.0",
+    "readline-sync": "1.4.10"
   },
   "devDependencies": {
     "electron": "^6.0.10"

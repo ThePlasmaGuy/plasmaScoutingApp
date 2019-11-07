@@ -90,8 +90,15 @@ if (debug) { // Log Scout Information
 	for (scout of scoutIDs) {
 		console.log(`[${scout.id}] ${scout.name}` + (scout.seperate ? ' - Data Seperated' : '')); // Show Seperation if Enabled
 	}
-	console.log('\n\n')
+	console.log('\n')
 }
+
+
+// Generate Match Form
+if (checkDuplicateItems(formConfig)) throw Error("[FORM] ERROR: Matching Form IDs found in inputs.json!"); // If Duplicate Item IDs exist in form, throw Error
+var formData = createHTML.generateHTML(true, formConfig); // Generate Form HTML
+var analysisFormData = createHTML.generateHTML(false, formConfig) // Generate Analysis Form HTML (No Options Required -> requireAnswer = false)
+fs.outputFileSync("./html/matchForm.html", formData); // Write to Disk
 
 
 // Generate Database
@@ -100,14 +107,6 @@ if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Databa
 } else { // Else, Create New Database
 	fs.outputFileSync("./db/db.json", "[]");
 }
-
-
-// Generate Match Form
-if (checkDuplicateItems(formConfig)) throw Error("[FORM] ERROR: Matching Form IDs found in matchForm.json!"); // If Duplicate Item IDs exist in form, throw Error
-var formData = createHTML.generateHTML(true, formConfig); // Generate Form HTML
-var analysisFormData = createHTML.generateHTML(false, formConfig) // Generate Analysis Form HTML (No Options Required -> requireAnswer = false)
-fs.outputFileSync("./html/matchForm.html", formData); // Write to Disk
-
 
 
 // Check Form against Database
@@ -120,37 +119,44 @@ var deleteMismatchedData = null; // Whether to delete data files that do not mat
 
 for (dataFile of dataFiles) { // Iterate over each file in data directory
 	if (debug) console.log(`[DATA] Checking Hash of ./db/${dataFile}`);
-	try {
-		var fileContents = JSON.parse(fs.readFileSync(`./db/${dataFile}`)); // Parse File Contents
-		var discoveredHashes = [];
-		
-		for (entry of fileContents) { // Loop through Data Entries
-			if (!(discoveredHashes).contains(entry.hash) && debug) { // If Debug mode, check if hash has been logged
-				discoveredHashes.push(entry.hash); // Push hash to discoveredHashes if not there
-				console.log(`[DATA] Hash ${entry.hash} found in ${dataFile}`); // Log unique hash to console
-			}
-			if (entry.hash !== formHash.toString()) { // Check Entry against current Form
-				if (deleteMismatchedData === null) {
-					deleteMismatchedData = readlineSync.question(`\n[DATA] ./db/${dataFile} contains data with mismatching hashes.  Delete this file and other files with incorrect hashes? (Y/N)`);
-					if (deleteMismatchedData === "Y") {
-						fs.unlinkSync(`./db/${dataFile}`);
-						deleteMismatchedData = true;
-					} else {
-						throw Error(`[DATA] Please Remove ./db/${dataFile} to continue.`)
-					} 
-				} else if (deleteMismatchedData) {
-					console.log(`[DATA] Deleting ${dataFile} (Mismatched Hashes)`)
-					fs.unlinkSync(`./db/${dataFile}`);
-				} else {
-					throw Error(`[DATA] ./db/${dataFile} contains mismatched hashes, please remove to continue.`)
-				}
-			}
+	var fileContents = JSON.parse(fs.readFileSync(`./db/${dataFile}`)); // Parse File Contents
+	var discoveredHashes = [];
+	
+	for (entry of fileContents) { // Loop through Data Entries
+		if (!(discoveredHashes.includes(entry.hash)) && debug) { // If Debug mode, check if hash has been logged
+			discoveredHashes.push(entry.hash); // Push hash to discoveredHashes if not there
+			console.log(`[DATA] Hash ${entry.hash} found in ${dataFile}` + (entry.hash !== formHash.toString() ? ' - Wrong Hash' : '')); // Log unique hash to console
 		}
-		console.log("\n");
-	} catch {
-		fs.unlinkSync("./db/" + dataFile); // Unlink Errored File
+		if (entry.hash !== formHash.toString()) { // Check Entry against current Form
+			if (deleteMismatchedData === null) {
+				deleteMismatchedData = readlineSync.question(`\n[DATA] ./db/${dataFile} contains data with mismatching hashes.  Delete this file and other files with incorrect hashes? (Y/N)`);
+				if (deleteMismatchedData.toLowerCase() === "y") {
+					console.log(`[DATA] Removing ./db/${dataFile}`);
+					deleteMismatchedData = true;
+
+					fs.unlinkSync(`./db/${dataFile}`);
+					
+					if (dataFile == 'db.json') dbArray = []; // Reset dbArray if db.json was deleted due to bad data
+
+				} else {
+					throw Error(`[DATA] Please Remove ./db/${dataFile} to continue.`)
+				} 
+			} else if (deleteMismatchedData) {
+				console.log(`[DATA] Deleting ${dataFile} (Mismatched Hashes)`)
+				fs.unlinkSync(`./db/${dataFile}`);
+
+				if (dataFile == 'db.json') dbArray = []; // Reset dbArray if db.json was deleted due to bad data
+			} else {
+				throw Error(`[DATA] ./db/${dataFile} contains mismatched hashes, please remove to continue.`)
+			}
+
+			break; // No need to check further data entries in this file
+		}
 	}
+	if (debug) console.log("\n");
 }
+
+
 
 
 // Initialize Express Instances
@@ -328,7 +334,7 @@ app.get('/submit', function(req, res) {
 				dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
 			}
 		} catch {
-			fs.writeFileSync("./db/db.json", "");
+			fs.outputFileSync("./db/db.json", "[]");
 		}
 		var sameHash = true;
 		for(var i = 0; i < dbArray.length; i++) {
@@ -365,7 +371,7 @@ app.get('/submit', function(req, res) {
 			res.send('ERROR: Incorrect Hash! Do you have the correct matchForm.html?');
 		}
 
-		fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));
+		fs.outputFileSync("./db/db.json", JSON.stringify(dbArray));
 	} else {
 		res.send('INVALID SCOUT ID');
 	}
@@ -378,7 +384,7 @@ app.post('/', function(req, res) {
 			dbArray = JSON.parse(fs.readFileSync('./db/db.json'));
 		}
 	} catch {
-		fs.writeFileSync("./db/db.json", "");
+		fs.outputFileSync("./db/db.json", "[]");
 	}
 	var sameHash = true;
 	for(var i = 0; i < dbArray.length; i++) {
@@ -414,11 +420,13 @@ app.post('/', function(req, res) {
 			try {
 				separateJSON = JSON.parse(fs.readFileSync("./db/db" + req.query.scoutID + ".json"));
 				separateJSON.push(dbNewObj);
-				fs.writeFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify(separateJSON));
+				fs.outputFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify(separateJSON));
 			} catch {
-				fs.writeFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify([dbNewObj]));
+				fs.outputFileSync("./db/db" + req.query.scoutID + ".json", JSON.stringify([dbNewObj]));
 			}
 		}
+		
+		console.log(`[DATA][/] New Data Submitted by Scout ${req.query.scoutID} (${searchDB.getScoutName(req.query.scoutID)})`);
 
 		formTemplate = fs.readFileSync('./html/templates/submit.html', 'utf8'); // Login HTML Template
 		page = mustache.render(formTemplate, {pageTitle: "Success", metadata: templateMetadata, submissionInfo: 'Successful', submissionMessage: 'Data has been successfully recorded!', back: '../'}); // Render HTML Template
@@ -431,7 +439,7 @@ app.post('/', function(req, res) {
 		res.send(page); // Send Rendered HTML to Client
 	}
 
-	fs.writeFileSync("./db/db.json", JSON.stringify(dbArray));
+	fs.outputFileSync("./db/db.json", JSON.stringify(dbArray));
 
 });
 

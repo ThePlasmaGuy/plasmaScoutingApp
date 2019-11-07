@@ -73,6 +73,7 @@ typings/
 .env.test
 
 # Application Files
+.history
 db/*.json
 json/scouts.json
 html/*form.html

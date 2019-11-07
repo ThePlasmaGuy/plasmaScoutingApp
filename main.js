@@ -5,6 +5,7 @@ const express = require('express');
 const md5File = require('md5-file');
 const mustache = require('mustache');
 const bodyParser = require('body-parser');
+const readlineSync = require('readline-sync');
 const createHTML = require("./lib/createHTML.js"); // Form Generation
 const searchDB = require("./lib/searchDB.js"); // Database Search Tools
 
@@ -67,6 +68,10 @@ function checkDuplicateItems(formConfig) { // Check a given Form Configuration f
 }
 
 
+// Debug Logging
+console.log('Loading Resources...' + (debug ? '\n[DEBUG MODE ENABLED\n\n' : '\n\n'));
+
+
 // Import Static Data
 var formConfig = JSON.parse(fs.readFileSync('./json/matchForm.json', 'utf8')); // Scouting Form Configuration Data
 var templateMetadata = fs.readFileSync('./html/templates/meta.html', 'utf8');; // Template Metadata
@@ -80,6 +85,14 @@ if (fs.existsSync("./json/scouts.json")) { // If Scout Identification Exists, Lo
 	fs.outputFileSync("./json/scouts.json", "[{\n    \"id\": \"000000\",\n    \"name\": \"Administrator\",\n    \"separate\": false,\n  }\n]");
 }
 
+if (debug) { // Log Scout Information
+	console.log('Registered Scouts:')
+	for (scout of scoutIDs) {
+		console.log(`[${scout.id}] ${scout.name}` + (scout.seperate ? ' - Data Seperated' : '')); // Show Seperation if Enabled
+	}
+	console.log('\n\n')
+}
+
 
 // Generate Database
 if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Database
@@ -90,7 +103,7 @@ if (fs.existsSync("./db/db.json")) { // If Database Exists, Load to Local Databa
 
 
 // Generate Match Form
-if (checkDuplicateItems(formConfig)) throw "ERROR: Matching Form IDs found in matchForm.json!"; // If Duplicate Item IDs exist in form, throw Error
+if (checkDuplicateItems(formConfig)) throw Error("[FORM] ERROR: Matching Form IDs found in matchForm.json!"); // If Duplicate Item IDs exist in form, throw Error
 var formData = createHTML.generateHTML(true, formConfig); // Generate Form HTML
 var analysisFormData = createHTML.generateHTML(false, formConfig) // Generate Analysis Form HTML (No Options Required -> requireAnswer = false)
 fs.outputFileSync("./html/matchForm.html", formData); // Write to Disk
@@ -100,33 +113,43 @@ fs.outputFileSync("./html/matchForm.html", formData); // Write to Disk
 // Check Form against Database
 const formHash = md5File.sync('./html/matchForm.html');  // Unique Form Instance Identifier
 
-var matchedFormIdentity = true; // Whether Data Matches the Current Form
+if (debug) console.log(`[FORM] Match Form Hash: ${formHash}`);
+
 var dataFiles = fs.readdirSync("./db"); // Get Files in Data Directory
+var deleteMismatchedData = null; // Whether to delete data files that do not match
 
 for (dataFile of dataFiles) { // Iterate over each file in data directory
+	if (debug) console.log(`[DATA] Checking Hash of ./db/${dataFile}`);
 	try {
-		var fileContents = JSON.parse(fs.readFileSync("./db/" + dataFile)); // Parse File Contents
+		var fileContents = JSON.parse(fs.readFileSync(`./db/${dataFile}`)); // Parse File Contents
+		var discoveredHashes = [];
 		
 		for (entry of fileContents) { // Loop through Data Entries
+			if (!(discoveredHashes).contains(entry.hash) && debug) { // If Debug mode, check if hash has been logged
+				discoveredHashes.push(entry.hash); // Push hash to discoveredHashes if not there
+				console.log(`[DATA] Hash ${entry.hash} found in ${dataFile}`); // Log unique hash to console
+			}
 			if (entry.hash !== formHash.toString()) { // Check Entry against current Form
-				matchedFormIdentity = false; // Data does not match loaded form
+				if (deleteMismatchedData === null) {
+					deleteMismatchedData = readlineSync.question(`\n[DATA] ./db/${dataFile} contains data with mismatching hashes.  Delete this file and other files with incorrect hashes? (Y/N)`);
+					if (deleteMismatchedData === "Y") {
+						fs.unlinkSync(`./db/${dataFile}`);
+						deleteMismatchedData = true;
+					} else {
+						throw Error(`[DATA] Please Remove ./db/${dataFile} to continue.`)
+					} 
+				} else if (deleteMismatchedData) {
+					console.log(`[DATA] Deleting ${dataFile} (Mismatched Hashes)`)
+					fs.unlinkSync(`./db/${dataFile}`);
+				} else {
+					throw Error(`[DATA] ./db/${dataFile} contains mismatched hashes, please remove to continue.`)
+				}
 			}
 		}
+		console.log("\n");
 	} catch {
 		fs.unlinkSync("./db/" + dataFile); // Unlink Errored File
 	}
-}
-
-if (matchedFormIdentity !== true) { // If Form is not a complete match for all Data Entries, throw ERROR
-	throw "ERROR: The database contains data from a form with a different hash than the form found!";
-}
-
-
-// Log Static Data [DEBUG]
-if (debug === true) {
-	console.log("Current Scouting Form: " + formData);
-	console.log("Form Identity: " + formHash);
-	console.log("Registered Scouts: " + JSON.stringify(scoutIDs));
 }
 
 
@@ -168,14 +191,14 @@ app.get('/', function(req, res) {
 		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
 		res.send(page); // Send Rendered HTML to Client
 
-		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
+		if (debug === true) console.log("[/] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
 app.get('/verify', function(req, res) {
 	if(searchDB.isValidScoutID(req.query.scoutID) === true) {
 		res.send('VALID');
-		console.log("new Electron client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID));
+		console.log("[ELECTRON] new Electron client with IP " + req.ip + ", Scout ID " + req.query.scoutID + ", Name " + searchDB.getScoutName(req.query.scoutID));
 	} else {
 		res.send('INVALID');
 	}
@@ -198,12 +221,16 @@ app.get('/analysis', function(req, res) {
 		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
 		res.send(page); // Send Rendered HTML to Client
 
-		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
+		if (debug === true) console.log("[/analysis] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
 app.post('/analysis', function(req, res) {
-	res.send(searchDB.searchDB(JSON.parse(fs.readFileSync("./db/db.json")), req.body));
+	try {
+		res.send(searchDB.searchDB(JSON.parse(fs.readFileSync("./db/db.json")), req.body));
+	} catch {
+		res.send("ERROR");
+	}
 });
 
 app.get('/download', function(req, res) {
@@ -243,7 +270,7 @@ app.get('/download', function(req, res) {
 		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
 		res.send(page); // Send Rendered HTML to Client
 
-		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
+		if (debug === true) console.log("[/download] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
@@ -285,7 +312,7 @@ app.get('/downloadExcel', function(req, res) {
 		page = mustache.render(formTemplate, {pageTitle: "Login", metadata: templateMetadata, error: '<p id="login-incorrect">Invalid Scout ID, Try Again</p>'}); // Render HTML Template
 		res.send(page); // Send Rendered HTML to Client
 
-		if (debug === true) console.log("INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
+		if (debug === true) console.log("[/downloadExcel] INVALID LOGIN: Attempted Login for " + req.query.scoutID + " at " + req.ip);
 	}
 });
 
@@ -334,7 +361,7 @@ app.get('/submit', function(req, res) {
 		} else if(uuidFound === true) {
 			res.send('Same UUID');
 		} else {
-			console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
+			console.log("[/submit] Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
 			res.send('ERROR: Incorrect Hash! Do you have the correct matchForm.html?');
 		}
 
@@ -370,7 +397,7 @@ app.post('/', function(req, res) {
 			"data": req.body
 		}
 		dbNewObj.scoutID = req.query.scoutID;
-		var separateUser = false
+		var separateUser = false;
 		for(var i = 0; i < scoutIDs.length; i++) {
 			if(scoutIDs[i].id == req.query.scoutID) {
 				if(scoutIDs[i].separate === true) {
@@ -383,7 +410,7 @@ app.post('/', function(req, res) {
 			dbArray.push(dbNewObj);
 		} else {
 			console.log("User \"" + searchDB.getScoutName(req.query.scoutID) + "\" has the \"SEPARATE\" flag set to TRUE, submission will be saved to ./db/db" + req.query.scoutID + ".json instead of regular database.");
-			var separateJSON = []
+			var separateJSON = [];
 			try {
 				separateJSON = JSON.parse(fs.readFileSync("./db/db" + req.query.scoutID + ".json"));
 				separateJSON.push(dbNewObj);
@@ -397,7 +424,7 @@ app.post('/', function(req, res) {
 		page = mustache.render(formTemplate, {pageTitle: "Success", metadata: templateMetadata, submissionInfo: 'Successful', submissionMessage: 'Data has been successfully recorded!', back: '../'}); // Render HTML Template
 		res.send(page); // Send Rendered HTML to Client
 	} else {
-		console.log("Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
+		console.log("[/] Client attempted submitting file with incorrect hash. Does client have wrong file? has the form been accidentally updated?");
 
 		formTemplate = fs.readFileSync('./html/templates/submit.html', 'utf8'); // Login HTML Template
 		page = mustache.render(formTemplate, {pageTitle: "ERROR", metadata: templateMetadata, submissionInfo: 'Failed', submissionMessage: 'Hash Mismatch: Client Form does not match Server...', back: '../'}); // Render HTML Template

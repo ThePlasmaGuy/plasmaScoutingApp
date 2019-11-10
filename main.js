@@ -18,7 +18,6 @@ const debug = true;
 
 // Container Variables
 var dbArray = []; // Local Scouting Database
-var scoutIDs = []; // Local Scout Information
 
 
 // Helper Functions
@@ -69,23 +68,17 @@ function checkDuplicateItems(formConfig) { // Check a given Form Configuration f
 
 
 // Debug Logging
-console.log('Loading Resources...' + (debug ? '\n[DEBUG MODE ENABLED\n\n' : '\n\n'));
+console.log('Loading Resources...' + (debug ? '\n[DEBUG MODE ENABLED]\n\n' : '\n\n'));
 
 
 // Import Static Data
-var formConfig = JSON.parse(fs.readFileSync('./json/matchForm.json', 'utf8')); // Scouting Form Configuration Data
+var formConfig = JSON.parse(fs.readFileSync('./json/inputs.json', 'utf8')); // Scouting Form Configuration Data
 var templateMetadata = fs.readFileSync('./html/templates/meta.html', 'utf8');; // Template Metadata
+var scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8')); // IDs of Registered Scouts
 
 
-// Generate ScoutIDs
-if (fs.existsSync("./json/scouts.json")) { // If Scout Identification Exists, Load to Local
-	scoutIDs = JSON.parse(fs.readFileSync('./json/scouts.json', 'utf8'));
-} else {
-	scoutIDs = [{"id": "000000", "name": "Administrator"}];
-	fs.outputFileSync("./json/scouts.json", "[{\n    \"id\": \"000000\",\n    \"name\": \"Administrator\",\n    \"separate\": false,\n  }\n]");
-}
-
-if (debug) { // Log Scout Information
+// Log Scout Information
+if (debug) {
 	console.log('Registered Scouts:')
 	for (scout of scoutIDs) {
 		console.log(`[${scout.id}] ${scout.name}` + (scout.seperate ? ' - Data Seperated' : '')); // Show Seperation if Enabled
